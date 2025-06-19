@@ -15,7 +15,7 @@ const Ahora = () => {
   const [depositConfirmed, setDepositConfirmed] = useState(false);
   const [total, setTotal] = useState(0);
 
-  // Coupon state - NUEVOS ESTADOS
+  // Coupon state - ESTADOS ACTUALIZADOS
   const [appliedCoupon, setAppliedCoupon] = useState(null);
   const [couponValidating, setCouponValidating] = useState(false);
   const [couponMessage, setCouponMessage] = useState('');
@@ -54,21 +54,56 @@ const Ahora = () => {
     return basePrice + extras;
   };
 
-  // NUEVA FUNCIÓN - Calcular descuento
-  const calculateDiscount = (subtotal, coupon) => {
+  // NUEVA FUNCIÓN - Calcular descuento ACTUALIZADA PARA INCLUIR HORAS
+  const calculateDiscount = (subtotal, coupon, currentHours) => {
     if (!coupon) return 0;
     
     if (coupon.discountType === 'percentage') {
       return Math.round(subtotal * (coupon.value / 100));
-    } else {
+    } else if (coupon.discountType === 'fixed') {
       return Math.min(coupon.value, subtotal); // No puede ser mayor al subtotal
+    } else if (coupon.discountType === 'hours') {
+      // Cupón de horas gratis - calcular descuento basado en las horas del cupón
+      const numHours = parseFloat(currentHours) || 0;
+      const freeHours = Math.min(coupon.value, numHours);
+      
+      if (freeHours <= 0) return 0;
+      
+      // Calcular el costo de las horas gratis
+      let hoursDiscount = 0;
+      
+      if (freeHours <= 1) {
+        // Si son 1 hora o menos, descontar proporcionalmente la primera hora
+        hoursDiscount = 10000 * freeHours;
+      } else {
+        // Si son más de 1 hora, descontar primera hora completa + horas adicionales
+        hoursDiscount = 10000; // Primera hora
+        hoursDiscount += (freeHours - 1) * 5000; // Horas adicionales
+      }
+      
+      // También descontar servicios adicionales proporcionalmente
+      if (numHours > 0) {
+        const proportionalExtras = (freeHours / numHours);
+        
+        // Calcular extras actuales
+        let currentExtras = 0;
+        if (platillos) currentExtras += numHours * 2000;
+        if (pedalDoble) currentExtras += numHours * 2000;
+        
+        const extrasDiscount = Math.round(currentExtras * proportionalExtras);
+        hoursDiscount += extrasDiscount;
+      }
+      
+      return Math.min(hoursDiscount, subtotal);
     }
+    
+    return 0;
   };
 
   // FUNCIÓN ACTUALIZADA - Calcular total con descuento
   const calculateTotal = () => {
     const subtotal = calculateSubtotal();
-    const discountAmount = calculateDiscount(subtotal, appliedCoupon);
+    const discountAmount = calculateDiscount(subtotal, appliedCoupon, hours);
     return subtotal - discountAmount;
   };
 
@@ -112,7 +147,7 @@ const Ahora = () => {
   // EFECTO ACTUALIZADO - Recalcular cuando cambien los valores
   React.useEffect(() => {
     const subtotal = calculateSubtotal();
-    const discountAmount = calculateDiscount(subtotal, appliedCoupon);
+    const discountAmount = calculateDiscount(subtotal, appliedCoupon, hours);
     setDiscount(discountAmount);
     setTotal(subtotal - discountAmount);
   }, [hours, platillos, pedalDoble, appliedCoupon]);
@@ -137,6 +172,22 @@ const Ahora = () => {
   const handleBackToCalculator = () => {
     setShowPersistentBanner(false);
     setShowCalculator(true);
+  };
+
+  // NUEVA FUNCIÓN - Obtener descripción del descuento
+  const getDiscountDescription = (coupon) => {
+    if (!coupon) return '';
+    
+    switch (coupon.discountType) {
+      case 'percentage':
+        return ` - ${coupon.value}%`;
+      case 'fixed':
+        return ` - ₡${coupon.value.toLocaleString('es-CR')}`;
+      case 'hours':
+        return ` - ${coupon.value} hr${coupon.value > 1 ? 's' : ''} gratis`;
+      default:
+        return '';
+    }
   };
 
   return (
@@ -274,13 +325,14 @@ const Ahora = () => {
                           value={coupon}
                           onChange={(e) => setCoupon(e.target.value.toUpperCase())}
                           className="flex-1 px-3 py-2 bg-gray-800 border border-gray-600 text-white focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent"
-                          placeholder="DESCUENTO10"
+                          placeholder="DESCUENTO10 o 2HRSFREE"
                           disabled={couponValidating}
                         />
                         {appliedCoupon ? (
                           <button
                             onClick={removeCoupon}
                             className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-medium transition-colors"
+                            title="Remover cupón"
                           >
                             <i className="fas fa-times"></i>
                           </button>
@@ -305,6 +357,21 @@ const Ahora = () => {
                           couponMessage.startsWith('✅') ? 'text-green-400' : 'text-red-400'
                         }`}>
                           {couponMessage}
+                        </div>
+                      )}
+
+                      {/* Información del cupón aplicado */}
+                      {appliedCoupon && (
+                        <div className="mt-2 p-3 bg-green-900/30 border border-green-600/50 rounded">
+                          <div className="flex items-center gap-2 text-green-400 text-sm">
+                            <i className="fas fa-ticket-alt"></i>
+                            <span className="font-medium">{appliedCoupon.code}</span>
+                            <span className="text-green-300">
+                              {appliedCoupon.discountType === 'percentage' && `${appliedCoupon.value}% de descuento`}
+                              {appliedCoupon.discountType === 'fixed' && `₡${appliedCoupon.value.toLocaleString('es-CR')} de descuento`}
+                              {appliedCoupon.discountType === 'hours' && `${appliedCoupon.value} hora${appliedCoupon.value > 1 ? 's' : ''} gratis`}
+                            </span>
+                          </div>
                         </div>
                       )}
                     </div>
@@ -364,7 +431,7 @@ const Ahora = () => {
                   {/* Columna derecha: Factura y acciones */}
                   <div className="flex-1 p-6 bg-none border-[0.5px] border-white/70">
                     
-                    {/* FACTURA ACTUALIZADA CON DESCUENTOS */}
+                    {/* FACTURA ACTUALIZADA CON DESCUENTOS DE HORAS */}
                     <div className="bg-gray-800 lg:bg-gray-700 p-4 border border-gray-600 mb-6">
                       <h4 className="font-semibold text-white mb-4 border-b border-gray-600 pb-2">
                         Detalle de la sesión
@@ -410,8 +477,7 @@ const Ahora = () => {
                                   </div>
                                   <div className="flex justify-between text-green-400">
                                     <span>
-                                      Descuento ({appliedCoupon.code})
-                                      {appliedCoupon.discountType === 'percentage' && ` - ${appliedCoupon.value}%`}
+                                      Descuento ({appliedCoupon.code}){getDiscountDescription(appliedCoupon)}
                                     </span>
                                     <span>-₡{discount.toLocaleString('es-CR')}</span>
                                   </div>
@@ -427,6 +493,14 @@ const Ahora = () => {
                                 </span>
                               </div>
                             </div>
+
+                            {/* Mostrar información adicional para cupones de horas */}
+                            {appliedCoupon && appliedCoupon.discountType === 'hours' && (
+                              <div className="mt-3 p-2 bg-green-900/20 border border-green-600/30 rounded text-xs text-green-300">
+                                <i className="fas fa-info-circle mr-1"></i>
+                                Tienes {appliedCoupon.value} hora{appliedCoupon.value > 1 ? 's' : ''} gratis incluida{appliedCoupon.value > 1 ? 's' : ''} en tu sesión
+                              </div>
+                            )}
                           </>
                         ) : (
                           <div className="text-gray-400 text-center py-4">

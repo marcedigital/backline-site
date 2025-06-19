@@ -1,3 +1,4 @@
+
 import mongoose from 'mongoose';
 
 const CouponSchema = new mongoose.Schema({
@@ -10,7 +11,7 @@ const CouponSchema = new mongoose.Schema({
   },
   discountType: {
     type: String,
-    enum: ['percentage', 'fixed'],
+    enum: ['percentage', 'fixed', 'hours'], // ← AGREGADO "hours"
     required: true,
   },
   value: {
@@ -41,6 +42,14 @@ CouponSchema.pre('validate', function(next) {
       return next(new Error('Start date must be before end date'));
     }
   }
+  
+  // Validación específica para cupones de horas
+  if (this.discountType === 'hours') {
+    if (this.value <= 0 || this.value > 24) {
+      return next(new Error('Hours value must be between 1 and 24'));
+    }
+  }
+  
   next();
 });
 
