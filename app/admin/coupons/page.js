@@ -1,8 +1,9 @@
-// app/admin/coupons/page.js
+// app/admin/coupons/page.js - VERSIÓN COMPLETA Y ORGANIZADA
 'use client';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
+import Link from 'next/link';
 import {
   Plus,
   Pencil,
@@ -15,9 +16,8 @@ import {
   Clock,
   CheckCircle,
   XCircle,
-  Users,
-  TrendingUp,
-  Ticket
+  Ticket,
+  BarChart3
 } from 'lucide-react';
 
 export default function AdminCoupons() {
@@ -108,10 +108,7 @@ export default function AdminCoupons() {
     
     try {
       const token = localStorage.getItem('adminToken');
-      const url = editingCoupon 
-        ? '/api/admin/coupons'
-        : '/api/admin/coupons';
-      
+      const url = '/api/admin/coupons';
       const method = editingCoupon ? 'PUT' : 'POST';
       const submitData = editingCoupon 
         ? { id: editingCoupon._id, ...formData }
@@ -226,25 +223,29 @@ export default function AdminCoupons() {
   const getCouponStatus = (coupon) => {
     if (!coupon.active) return { text: 'Inactivo', color: 'text-gray-500' };
     
-    if (coupon.couponType === 'one-time' && coupon.usageCount > 0) {
-      return { text: 'Usado', color: 'text-orange-500' };
-    }
-    
+    const now = new Date();
     if (coupon.couponType === 'time-limited') {
-      const now = new Date();
       const endDate = new Date(coupon.endDate);
-      if (endDate < now) {
-        return { text: 'Expirado', color: 'text-red-500' };
-      }
+      if (endDate < now) return { text: 'Expirado', color: 'text-red-400' };
+      
+      const startDate = new Date(coupon.startDate);
+      if (startDate > now) return { text: 'Programado', color: 'text-yellow-400' };
     }
     
-    return { text: 'Activo', color: 'text-green-500' };
+    if (coupon.couponType === 'one-time' && coupon.usageCount > 0) {
+      return { text: 'Usado', color: 'text-orange-400' };
+    }
+    
+    return { text: 'Activo', color: 'text-green-400' };
   };
 
   if (loading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="text-white text-xl font-moderniz">Cargando...</div>
+        <div className="text-center space-y-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
+          <div className="text-white text-xl font-moderniz">Cargando Cupones...</div>
+        </div>
       </div>
     );
   }
@@ -252,7 +253,7 @@ export default function AdminCoupons() {
   return (
     <div className="min-h-screen bg-black text-white font-montserrat">
       {/* Header */}
-      <header className="bg-gray-900/85 border-b border-gray-700 backdrop-blur-sm">
+      <header className="bg-gray-900/85 border-b border-gray-700 backdrop-blur-sm sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
@@ -269,12 +270,6 @@ export default function AdminCoupons() {
             
             <div className="flex items-center space-x-4">
               <button
-                onClick={() => router.push('/admin/dashboard')}
-                className="text-gray-300 hover:text-white transition-colors"
-              >
-                Dashboard
-              </button>
-              <button
                 onClick={handleLogout}
                 className="bg-red-600/80 hover:bg-red-600 px-4 py-2 rounded transition-colors text-sm"
               >
@@ -284,6 +279,36 @@ export default function AdminCoupons() {
           </div>
         </div>
       </header>
+
+      {/* Navigation Tabs */}
+      <div className="bg-gray-900/50 border-b border-gray-700 sticky top-[73px] z-30">
+        <div className="max-w-7xl mx-auto px-6">
+          <nav className="flex space-x-0" aria-label="Admin Navigation">
+            <Link
+              href="/admin/dashboard"
+              className="text-gray-400 hover:text-gray-300 hover:bg-gray-800/50 border-transparent flex items-center space-x-2 px-6 py-4 border-b-2 font-medium text-sm transition-all duration-200"
+            >
+              <BarChart3 className="h-4 w-4" />
+              <span>Dashboard</span>
+            </Link>
+            <Link
+              href="/admin/coupons"
+              className="bg-purple-600/20 text-purple-300 border-purple-500 flex items-center space-x-2 px-6 py-4 border-b-2 font-medium text-sm transition-all duration-200 relative"
+            >
+              <Ticket className="h-4 w-4" />
+              <span>Cupones</span>
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-purple-500"></div>
+            </Link>
+            <Link
+              href="/admin/bookings"
+              className="text-gray-400 hover:text-gray-300 hover:bg-gray-800/50 border-transparent flex items-center space-x-2 px-6 py-4 border-b-2 font-medium text-sm transition-all duration-200"
+            >
+              <Calendar className="h-4 w-4" />
+              <span>Reservas</span>
+            </Link>
+          </nav>
+        </div>
+      </div>
 
       <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Stats Cards */}
@@ -506,30 +531,28 @@ export default function AdminCoupons() {
           </div>
         )}
 
-        {/* Coupons Table */}
+        {/* Coupons Display */}
         <div className="bg-gray-900/50 border border-gray-700 rounded-lg backdrop-blur-sm overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-800/50">
-                <tr>
-                  <th className="px-6 py-4 text-left text-sm font-medium text-gray-300">Código</th>
-                  <th className="px-6 py-4 text-left text-sm font-medium text-gray-300">Descuento</th>
-                  <th className="px-6 py-4 text-left text-sm font-medium text-gray-300">Tipo</th>
-                  <th className="px-6 py-4 text-left text-sm font-medium text-gray-300">Vigencia</th>
-                  <th className="px-6 py-4 text-left text-sm font-medium text-gray-300">Usos</th>
-                  <th className="px-6 py-4 text-left text-sm font-medium text-gray-300">Estado</th>
-                  <th className="px-6 py-4 text-left text-sm font-medium text-gray-300">Acciones</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-700">
-                {coupons.map((coupon) => {
-                  const status = getCouponStatus(coupon);
-                  return (
+          {/* Desktop Table */}
+          <div className="hidden md:block overflow-x-auto">
+            {coupons.length > 0 ? (
+              <table className="w-full">
+                <thead className="bg-gray-800/50">
+                  <tr>
+                    <th className="px-6 py-4 text-left text-sm font-medium text-gray-300">Código</th>
+                    <th className="px-6 py-4 text-left text-sm font-medium text-gray-300">Descuento</th>
+                    <th className="px-6 py-4 text-left text-sm font-medium text-gray-300">Tipo</th>
+                    <th className="px-6 py-4 text-left text-sm font-medium text-gray-300">Vigencia</th>
+                    <th className="px-6 py-4 text-left text-sm font-medium text-gray-300">Usos</th>
+                    <th className="px-6 py-4 text-left text-sm font-medium text-gray-300">Estado</th>
+                    <th className="px-6 py-4 text-left text-sm font-medium text-gray-300">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-700">
+                  {coupons.map((coupon) => (
                     <tr key={coupon._id} className="hover:bg-gray-800/30 transition-colors">
                       <td className="px-6 py-4">
-                        <div className="flex items-center space-x-2">
-                          <span className="font-mono font-bold text-purple-400">{coupon.code}</span>
-                        </div>
+                        <span className="font-mono font-bold text-purple-400">{coupon.code}</span>
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center space-x-1">
@@ -617,17 +640,137 @@ export default function AdminCoupons() {
                         </div>
                       </td>
                     </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-            
-            {coupons.length === 0 && (
+                  ))}
+                </tbody>
+              </table>
+            ) : (
               <div className="text-center py-12 text-gray-400">
                 <div className="space-y-3">
                   <div className="text-4xl">🎫</div>
                   <p className="text-lg font-medium">No hay cupones creados</p>
                   <p className="text-sm">Crea tu primer cupón para empezar</p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Mobile Cards */}
+          <div className="md:hidden">
+            {coupons.length > 0 ? (
+              <div className="p-4 space-y-4">
+                {coupons.map((coupon) => {
+                  const status = getCouponStatus(coupon);
+                  return (
+                    <div key={coupon._id} className="bg-gray-800/50 border border-gray-700 rounded-lg p-4">
+                      {/* Header */}
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="font-mono font-bold text-purple-400 text-lg">{coupon.code}</div>
+                        <button
+                          onClick={() => toggleCouponStatus(coupon)}
+                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                            coupon.active ? 'bg-green-600' : 'bg-gray-600'
+                          }`}
+                        >
+                          <span
+                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                              coupon.active ? 'translate-x-6' : 'translate-x-1'
+                            }`}
+                          />
+                        </button>
+                      </div>
+
+                      {/* Discount Info */}
+                      <div className="flex items-center space-x-2 mb-3">
+                        {coupon.discountType === 'percentage' ? (
+                          <Percent className="h-4 w-4 text-green-400" />
+                        ) : coupon.discountType === 'fixed' ? (
+                          <DollarSign className="h-4 w-4 text-blue-400" />
+                        ) : (
+                          <Clock className="h-4 w-4 text-orange-400" />
+                        )}
+                        <span className="font-medium text-white">
+                          {coupon.discountType === 'percentage' 
+                            ? `${coupon.value}% de descuento` 
+                            : coupon.discountType === 'fixed'
+                            ? `₡${coupon.value.toLocaleString('es-CR')} de descuento`
+                            : `${coupon.value} horas gratis`
+                          }
+                        </span>
+                      </div>
+
+                      {/* Type Badge */}
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-700 text-gray-300">
+                          {coupon.couponType === 'one-time' ? 'Un solo uso' : 'Por tiempo limitado'}
+                        </span>
+                        <span className={`text-sm font-medium ${status.color}`}>
+                          {status.text}
+                        </span>
+                      </div>
+
+                      {/* Validity Period */}
+                      {coupon.couponType === 'time-limited' && (
+                        <div className="mb-3 p-3 bg-gray-900/50 rounded border border-gray-600">
+                          <div className="text-xs text-gray-400 mb-1">Período de validez</div>
+                          <div className="flex items-center space-x-1 text-sm">
+                            <Calendar className="h-3 w-3 text-gray-400" />
+                            <span>{formatDate(coupon.startDate)}</span>
+                            <span className="text-gray-400">-</span>
+                            <span>{formatDate(coupon.endDate)}</span>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Usage Info */}
+                      <div className="mb-4 p-3 bg-gray-900/50 rounded border border-gray-600">
+                        <div className="text-xs text-gray-400 mb-1">Información de uso</div>
+                        <div className="text-sm">
+                          <div className="font-medium">Usado {coupon.usageCount} {coupon.usageCount === 1 ? 'vez' : 'veces'}</div>
+                          {coupon.lastUsedAt && (
+                            <div className="text-gray-400 text-xs mt-1">
+                              Último uso: {formatDate(coupon.lastUsedAt)}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Action Buttons */}
+                      <div className="flex items-center space-x-2 pt-2 border-t border-gray-600">
+                        <button
+                          onClick={() => editCoupon(coupon)}
+                          className="flex-1 bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 hover:text-blue-300 py-2 px-3 rounded transition-colors flex items-center justify-center space-x-2"
+                        >
+                          <Pencil className="h-4 w-4" />
+                          <span>Editar</span>
+                        </button>
+                        <button
+                          onClick={() => deleteCoupon(coupon._id)}
+                          className="flex-1 bg-red-600/20 hover:bg-red-600/30 text-red-400 hover:text-red-300 py-2 px-3 rounded transition-colors flex items-center justify-center space-x-2"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                          <span>Eliminar</span>
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="text-center py-12 text-gray-400">
+                <div className="space-y-3">
+                  <div className="text-4xl">🎫</div>
+                  <p className="text-lg font-medium">No hay cupones creados</p>
+                  <p className="text-sm">Crea tu primer cupón para empezar</p>
+                  <button
+                    onClick={() => {
+                      resetForm();
+                      setShowForm(true);
+                    }}
+                    className="mt-4 bg-purple-600/85 hover:bg-purple-600 text-white px-6 py-3 rounded-lg transition-colors inline-flex items-center space-x-2"
+                  >
+                    <Plus className="h-5 w-5" />
+                    <span>Crear Primer Cupón</span>
+                  </button>
                 </div>
               </div>
             )}

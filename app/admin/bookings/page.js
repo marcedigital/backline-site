@@ -19,7 +19,8 @@ import {
   Ticket,
   RefreshCw,
   Download,
-  MoreHorizontal
+  MoreHorizontal,
+  BarChart3
 } from 'lucide-react';
 
 export default function AdminBookings() {
@@ -187,18 +188,6 @@ export default function AdminBookings() {
             </div>
             
             <div className="flex items-center space-x-4">
-              <Link
-                href="/admin/dashboard"
-                className="text-gray-300 hover:text-white transition-colors"
-              >
-                Dashboard
-              </Link>
-              <Link
-                href="/admin/coupons"
-                className="text-gray-300 hover:text-white transition-colors"
-              >
-                Cupones
-              </Link>
               <button
                 onClick={handleLogout}
                 className="bg-red-600/80 hover:bg-red-600 px-4 py-2 rounded transition-colors text-sm"
@@ -209,6 +198,36 @@ export default function AdminBookings() {
           </div>
         </div>
       </header>
+
+      {/* Navigation Tabs */}
+      <div className="bg-gray-900/50 border-b border-gray-700 sticky top-[73px] z-30">
+        <div className="max-w-7xl mx-auto px-6">
+          <nav className="flex space-x-0" aria-label="Admin Navigation">
+            <Link
+              href="/admin/dashboard"
+              className="text-gray-400 hover:text-gray-300 hover:bg-gray-800/50 border-transparent flex items-center space-x-2 px-6 py-4 border-b-2 font-medium text-sm transition-all duration-200"
+            >
+              <BarChart3 className="h-4 w-4" />
+              <span>Dashboard</span>
+            </Link>
+            <Link
+              href="/admin/coupons"
+              className="text-gray-400 hover:text-gray-300 hover:bg-gray-800/50 border-transparent flex items-center space-x-2 px-6 py-4 border-b-2 font-medium text-sm transition-all duration-200"
+            >
+              <Ticket className="h-4 w-4" />
+              <span>Cupones</span>
+            </Link>
+            <Link
+              href="/admin/bookings"
+              className="bg-purple-600/20 text-purple-300 border-purple-500 flex items-center space-x-2 px-6 py-4 border-b-2 font-medium text-sm transition-all duration-200 relative"
+            >
+              <Calendar className="h-4 w-4" />
+              <span>Reservas</span>
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-purple-500"></div>
+            </Link>
+          </nav>
+        </div>
+      </div>
 
       <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Stats Cards */}
@@ -343,7 +362,7 @@ export default function AdminBookings() {
             </div>
           </div>
 
-          <div className="overflow-x-auto">
+          <div className="hidden md:block overflow-x-auto">
             {bookings.length > 0 ? (
               <table className="w-full">
                 <thead className="bg-gray-800/50">
@@ -448,6 +467,109 @@ export default function AdminBookings() {
                   ))}
                 </tbody>
               </table>
+            ) : (
+              <div className="text-center py-12 text-gray-400">
+                <div className="space-y-3">
+                  <Calendar className="h-12 w-12 mx-auto opacity-50" />
+                  <p className="text-lg font-medium">No hay reservas</p>
+                  <p className="text-sm">Las nuevas reservas aparecerán aquí</p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Mobile Cards */}
+          <div className="md:hidden">
+            {bookings.length > 0 ? (
+              <div className="p-4 space-y-4">
+                {bookings.map((booking) => (
+                  <div key={booking._id} className="bg-gray-800/50 border border-gray-700 rounded-lg p-4">
+                    {/* Header */}
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="font-mono font-bold text-purple-400">{booking.receiptDetail}</div>
+                      {getStatusBadge(booking.status)}
+                    </div>
+
+                    {/* Main Info */}
+                    <div className="grid grid-cols-2 gap-3 text-sm mb-3">
+                      <div>
+                        <span className="text-gray-400">Fecha:</span>
+                        <div className="font-medium">{formatDate(booking.createdAt)}</div>
+                      </div>
+                      <div>
+                        <span className="text-gray-400">Sesión:</span>
+                        <div className="font-medium">{booking.hours} hrs</div>
+                        {(booking.services.platillos || booking.services.pedalDoble) && (
+                          <div className="text-xs text-gray-400">
+                            {booking.services.platillos && 'Platillos '}
+                            {booking.services.pedalDoble && 'Pedal Doble'}
+                          </div>
+                        )}
+                      </div>
+                      <div>
+                        <span className="text-gray-400">Total:</span>
+                        <div className="font-bold text-white">₡{booking.total.toLocaleString('es-CR')}</div>
+                        {booking.discount > 0 && (
+                          <div className="text-gray-400 text-xs line-through">
+                            ₡{booking.subtotal.toLocaleString('es-CR')}
+                          </div>
+                        )}
+                      </div>
+                      <div>
+                        <span className="text-gray-400">Cupón:</span>
+                        {booking.couponUsed?.code ? (
+                          <div>
+                            <div className="font-mono font-medium text-green-400 text-xs">
+                              {booking.couponUsed.code}
+                            </div>
+                            <div className="text-gray-400 text-xs">
+                              -₡{booking.discount.toLocaleString('es-CR')}
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="text-gray-500 text-xs">Sin cupón</div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex items-center justify-between pt-3 border-t border-gray-700">
+                      <div className="text-xs text-gray-400">
+                        {booking.ipAddress !== 'unknown' && `IP: ${booking.ipAddress}`}
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        {booking.status === 'pending' && (
+                          <>
+                            <button
+                              onClick={() => updateBookingStatus(booking._id, 'confirmed')}
+                              className="text-green-400 hover:text-green-300 transition-colors p-2 hover:bg-green-400/10 rounded"
+                              title="Confirmar"
+                            >
+                              <CheckCircle className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={() => updateBookingStatus(booking._id, 'cancelled')}
+                              className="text-red-400 hover:text-red-300 transition-colors p-2 hover:bg-red-400/10 rounded"
+                              title="Cancelar"
+                            >
+                              <XCircle className="h-4 w-4" />
+                            </button>
+                          </>
+                        )}
+                        {booking.status === 'confirmed' && (
+                          <button
+                            onClick={() => updateBookingStatus(booking._id, 'completed')}
+                            className="text-blue-400 hover:text-blue-300 transition-colors p-2 hover:bg-blue-400/10 rounded"
+                            title="Marcar como completada"
+                          >
+                            <CheckCircle className="h-4 w-4" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             ) : (
               <div className="text-center py-12 text-gray-400">
                 <div className="space-y-3">
