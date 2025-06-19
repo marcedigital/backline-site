@@ -240,7 +240,14 @@ export default function AdminDashboard() {
                 className="text-gray-300 hover:text-white transition-colors flex items-center space-x-1"
               >
                 <Ticket className="h-4 w-4" />
-                <span className="hidden sm:inline">Gestionar Cupones</span>
+                <span className="hidden sm:inline">Cupones</span>
+              </Link>
+              <Link
+                href="/admin/bookings"
+                className="text-gray-300 hover:text-white transition-colors flex items-center space-x-1"
+              >
+                <Calendar className="h-4 w-4" />
+                <span className="hidden sm:inline">Reservas</span>
               </Link>
               <button
                 onClick={handleLogout}

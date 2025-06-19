@@ -152,10 +152,57 @@ const Ahora = () => {
     setTotal(subtotal - discountAmount);
   }, [hours, platillos, pedalDoble, appliedCoupon]);
 
-  const handleProceedToBooking = () => {
+  const handleProceedToBooking = async () => {
     if (hours && parseFloat(hours) > 0 && receiptDetail.trim() && depositConfirmed) {
-      setShowCalculator(false);
-      setShowPersistentBanner(false);
+      try {
+        console.log('📝 Creando reserva...');
+        
+        // Preparar datos de la reserva
+        const bookingData = {
+          hours: parseFloat(hours),
+          services: {
+            platillos,
+            pedalDoble
+          },
+          subtotal: calculateSubtotal(),
+          discount: discount,
+          total: total,
+          receiptDetail: receiptDetail.trim(),
+          couponCode: appliedCoupon ? appliedCoupon.code : null,
+          appliedCoupon: appliedCoupon
+        };
+        
+        console.log('📋 Datos de reserva:', bookingData);
+        
+        // Enviar al backend
+        const response = await fetch('/api/bookings', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(bookingData)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          console.log('✅ Reserva creada exitosamente:', result.booking.id);
+          
+          // Mostrar mensaje de éxito (opcional)
+          alert('¡Reserva registrada exitosamente! Procede con la reserva en el calendario.');
+          
+          // Continuar con el flujo original
+          setShowCalculator(false);
+          setShowPersistentBanner(false);
+        } else {
+          console.error('❌ Error creando reserva:', result.message);
+          alert('Error al registrar la reserva: ' + result.message);
+        }
+        
+      } catch (error) {
+        console.error('❌ Error de red:', error);
+        alert('Error de conexión. Por favor intenta nuevamente.');
+      }
     }
   };
 
