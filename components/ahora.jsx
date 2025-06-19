@@ -15,6 +15,12 @@ const Ahora = () => {
   const [depositConfirmed, setDepositConfirmed] = useState(false);
   const [total, setTotal] = useState(0);
 
+  // Coupon state - NUEVOS ESTADOS
+  const [appliedCoupon, setAppliedCoupon] = useState(null);
+  const [couponValidating, setCouponValidating] = useState(false);
+  const [couponMessage, setCouponMessage] = useState('');
+  const [discount, setDiscount] = useState(0);
+
   useEffect(() => {
     const script = document.createElement("script");
     script.src = "https://booking.easyweek.io/widget.js";
@@ -31,7 +37,8 @@ const Ahora = () => {
     };
   }, []);
 
-  const calculateTotal = () => {
+  // FUNCIÓN ACTUALIZADA - Separar subtotal y total
+  const calculateSubtotal = () => {
     if (!hours || parseFloat(hours) <= 0) return 0;
     
     const numHours = parseFloat(hours);
@@ -44,17 +51,71 @@ const Ahora = () => {
     if (platillos) extras += numHours * 2000;
     if (pedalDoble) extras += numHours * 2000;
     
-    const subtotal = basePrice + extras;
-    
-    // Aquí podrías agregar lógica de cupones más adelante
-    // Por ahora solo devolvemos el subtotal
-    return subtotal;
+    return basePrice + extras;
   };
 
-  // Recalcular cuando cambien los valores
+  // NUEVA FUNCIÓN - Calcular descuento
+  const calculateDiscount = (subtotal, coupon) => {
+    if (!coupon) return 0;
+    
+    if (coupon.discountType === 'percentage') {
+      return Math.round(subtotal * (coupon.value / 100));
+    } else {
+      return Math.min(coupon.value, subtotal); // No puede ser mayor al subtotal
+    }
+  };
+
+  // FUNCIÓN ACTUALIZADA - Calcular total con descuento
+  const calculateTotal = () => {
+    const subtotal = calculateSubtotal();
+    const discountAmount = calculateDiscount(subtotal, appliedCoupon);
+    return subtotal - discountAmount;
+  };
+
+  // NUEVA FUNCIÓN - Validar cupón
+  const validateCoupon = async () => {
+    if (!coupon.trim()) {
+      setCouponMessage('');
+      return;
+    }
+
+    setCouponValidating(true);
+    setCouponMessage('');
+
+    try {
+      const response = await fetch(`/api/coupons/validate?code=${encodeURIComponent(coupon.trim())}`);
+      const data = await response.json();
+
+      if (data.success) {
+        setAppliedCoupon(data.coupon);
+        setCouponMessage('✅ Cupón aplicado exitosamente');
+      } else {
+        setAppliedCoupon(null);
+        setCouponMessage(`❌ ${data.message}`);
+      }
+    } catch (error) {
+      setAppliedCoupon(null);
+      setCouponMessage('❌ Error al validar el cupón');
+    } finally {
+      setCouponValidating(false);
+    }
+  };
+
+  // NUEVA FUNCIÓN - Remover cupón
+  const removeCoupon = () => {
+    setCoupon('');
+    setAppliedCoupon(null);
+    setCouponMessage('');
+    setDiscount(0);
+  };
+
+  // EFECTO ACTUALIZADO - Recalcular cuando cambien los valores
   React.useEffect(() => {
-    setTotal(calculateTotal());
-  }, [hours, platillos, pedalDoble, coupon]);
+    const subtotal = calculateSubtotal();
+    const discountAmount = calculateDiscount(subtotal, appliedCoupon);
+    setDiscount(discountAmount);
+    setTotal(subtotal - discountAmount);
+  }, [hours, platillos, pedalDoble, appliedCoupon]);
 
   const handleProceedToBooking = () => {
     if (hours && parseFloat(hours) > 0 && receiptDetail.trim() && depositConfirmed) {
@@ -202,18 +263,50 @@ const Ahora = () => {
                       </div>
                     </div>
                     
-                    {/* Cupón */}
+                    {/* SECCIÓN DE CUPÓN ACTUALIZADA */}
                     <div className="mb-6">
                       <label className="block text-sm font-medium text-gray-300 mb-2">
                         Código de cupón (opcional):
                       </label>
-                      <input
-                        type="text"
-                        value={coupon}
-                        onChange={(e) => setCoupon(e.target.value)}
-                        className="w-full px-3 py-2 bg-gray-800 border border-gray-600 text-white focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent"
-                        placeholder="Ingresa tu cupón"
-                      />
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={coupon}
+                          onChange={(e) => setCoupon(e.target.value.toUpperCase())}
+                          className="flex-1 px-3 py-2 bg-gray-800 border border-gray-600 text-white focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                          placeholder="DESCUENTO10"
+                          disabled={couponValidating}
+                        />
+                        {appliedCoupon ? (
+                          <button
+                            onClick={removeCoupon}
+                            className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-medium transition-colors"
+                          >
+                            <i className="fas fa-times"></i>
+                          </button>
+                        ) : (
+                          <button
+                            onClick={validateCoupon}
+                            disabled={couponValidating || !coupon.trim()}
+                            className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {couponValidating ? (
+                              <i className="fas fa-spinner fa-spin"></i>
+                            ) : (
+                              'Aplicar'
+                            )}
+                          </button>
+                        )}
+                      </div>
+                      
+                      {/* Mensaje del cupón */}
+                      {couponMessage && (
+                        <div className={`mt-2 text-sm ${
+                          couponMessage.startsWith('✅') ? 'text-green-400' : 'text-red-400'
+                        }`}>
+                          {couponMessage}
+                        </div>
+                      )}
                     </div>
 
                     {/* Detalle del comprobante */}
@@ -271,7 +364,7 @@ const Ahora = () => {
                   {/* Columna derecha: Factura y acciones */}
                   <div className="flex-1 p-6 bg-none border-[0.5px] border-white/70">
                     
-                    {/* Factura */}
+                    {/* FACTURA ACTUALIZADA CON DESCUENTOS */}
                     <div className="bg-gray-800 lg:bg-gray-700 p-4 border border-gray-600 mb-6">
                       <h4 className="font-semibold text-white mb-4 border-b border-gray-600 pb-2">
                         Detalle de la sesión
@@ -305,6 +398,25 @@ const Ahora = () => {
                                 <span>Pedal doble ({parseFloat(hours)} hrs)</span>
                                 <span>₡{(parseFloat(hours) * 2000).toLocaleString('es-CR')}</span>
                               </div>
+                            )}
+
+                            {/* Mostrar subtotal si hay descuento */}
+                            {discount > 0 && (
+                              <>
+                                <div className="border-t border-gray-600 pt-2 mt-3">
+                                  <div className="flex justify-between text-gray-300">
+                                    <span>Subtotal</span>
+                                    <span>₡{calculateSubtotal().toLocaleString('es-CR')}</span>
+                                  </div>
+                                  <div className="flex justify-between text-green-400">
+                                    <span>
+                                      Descuento ({appliedCoupon.code})
+                                      {appliedCoupon.discountType === 'percentage' && ` - ${appliedCoupon.value}%`}
+                                    </span>
+                                    <span>-₡{discount.toLocaleString('es-CR')}</span>
+                                  </div>
+                                </div>
+                              </>
                             )}
                             
                             <div className="border-t border-gray-600 pt-2 mt-3">
