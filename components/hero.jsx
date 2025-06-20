@@ -24,7 +24,7 @@ const Hero = () => {
           playsInline
         />
       </div>
-      <div className="relative flex flex-col items-center pt-40 text-center md:items-start md:text-start top-40 md:px-10 gap-2 z-20 max-w-[1650px] mx-auto px-4 md:pt-24 lg:pt-40">
+      <div className="relative flex flex-col items-center pt-40 text-center md:items-start md:text-start top-24 md:px-10 gap-2 z-20 max-w-[1650px] mx-auto px-4 md:pt-24 lg:pt-40">
         <div className="flex gap-3 mb-6">
           <Link
             href="https://www.facebook.com/backlinestudios/?locale=es_LA"
@@ -67,7 +67,7 @@ const Hero = () => {
         <a
           href="#reservar"
           onClick={(e) => scrollToSection(e, "Tarifas")}
-          className="inline-block bg-white hover:bg-transparent border border-white hover:text-white text-[14px] md:text-[15px] lg:text-[18px] rounded-full px-6 py-3 text-sm font-medium transition-all text-black"
+          className="inline-block bg-[#40F03F] hover:bg-transparent hover:border hover:border-white hover:text-white text-[14px] md:text-[15px] lg:text-[18px] rounded-full px-6 py-4 text-sm font-semibold transition-all text-black"
         >
           Reservar espacio
         </a>

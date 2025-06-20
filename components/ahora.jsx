@@ -316,10 +316,10 @@ const Ahora = () => {
             <div className="absolute top-0 left-0 right-0 z-10 bg-yellow-600 border-b-2 border-yellow-500 px-4 py-3">
               <div className="flex items-center justify-between max-w-[1800px] mx-auto">
                 <div className="flex items-center text-black">
-                  <span className="mr-2">⚠️</span>
+                  <span className="mr-2">💡</span>
                   <span className="font-medium text-sm">
                     <strong>Importante:</strong> Las reservas se confirman únicamente con depósito previo.
-                    Las reservas sin comprobante serán canceladas.
+                    Las reservas sin comprobante serán eliminadas.
                   </span>
                 </div>
                 <button
@@ -756,13 +756,13 @@ const Ahora = () => {
                 <div className="text-center">
                   <div className="mb-6">
                     <div className="mx-auto w-16 h-16 bg-yellow-500 bg-opacity-20 flex items-center justify-center mb-4">
-                      <span className="text-3xl">⚠️</span>
+                      <span className="text-3xl">💡</span>
                     </div>
                     <h3 className="text-xl font-bold text-white mb-4">
                       Importante
                     </h3>
                     <p className="text-gray-300 leading-relaxed">
-                      Recuerda que <strong className="text-white">las reservas se confirman únicamente con depósito previo</strong>, las reservas sin comprobante de pago serán canceladas.
+                      Recuerda que <strong className="text-white">las reservas se confirman únicamente con depósito previo</strong>, las reservas sin comprobante de pago serán eliminadas.
                     </p>
                   </div>
                   

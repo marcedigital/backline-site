@@ -1,6 +1,7 @@
 import type React from "react";
 import "./globals.css";
 import type { Metadata } from "next";
+import WhatsAppButton from "@/components/WhatsAppButton";
 
 // Import fonts from local /fonts directory
 import { Montserrat } from "next/font/google";
@@ -43,6 +44,7 @@ export default function RootLayout({
         className={`${montserrat.variable} font-montserrat ${moderniz.variable}`}
       >
         {children}
+        <WhatsAppButton />
       </body>
     </html>
   );

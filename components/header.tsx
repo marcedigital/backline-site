@@ -73,7 +73,7 @@ export default function Header() {
               onClick={(e) => scrollToSection(e, "Tarifas")}
               className="inline-block bg-white hover:bg-transparent border border-white hover:text-white text-[14px] lg:text-[16px] xl:text-[18px] rounded-full px-4 lg:px-6 py-2 lg:py-3 text-sm font-medium transition-all text-black"
             >
-              Reservar Ahora
+              Reservar espacio
             </a>
           </nav>
 
@@ -133,7 +133,7 @@ export default function Header() {
                 onClick={(e) => scrollToSection(e, "Tarifas")}
                 className="inline-block bg-white hover:bg-transparent border border-white hover:text-white text-[14px] md:text-[16px] lg:text-[18px] rounded-full px-6 py-3 text-sm font-medium transition-all text-black"
               >
-                Reservar Ahora
+                Reservar espacio
               </a>
             </nav>
           </div>
