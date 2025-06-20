@@ -1,4 +1,4 @@
-// app/admin/bookings/page.js - COMPLETO
+// app/admin/bookings/page.js - RESTAURADO AL ORIGINAL + IMÁGENES
 'use client';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -20,7 +20,8 @@ import {
   RefreshCw,
   Download,
   MoreHorizontal,
-  BarChart3
+  BarChart3,
+  FileImage
 } from 'lucide-react';
 
 export default function AdminBookings() {
@@ -29,6 +30,7 @@ export default function AdminBookings() {
   const [stats, setStats] = useState({});
   const [topCoupons, setTopCoupons] = useState([]);
   const [pagination, setPagination] = useState({});
+  const [selectedImage, setSelectedImage] = useState(null); // NUEVO: Para modal de imagen
   const router = useRouter();
 
   // Filtros
@@ -68,6 +70,9 @@ export default function AdminBookings() {
         }
       });
       
+      // IMPORTANTE: Siempre incluir imágenes para el admin
+      queryParams.append('includeImages', 'true');
+      
       const response = await fetch(`/api/admin/bookings?${queryParams}`, {
         headers: {
           'Authorization': `Bearer ${token}`
@@ -78,7 +83,7 @@ export default function AdminBookings() {
         const data = await response.json();
         setBookings(data.bookings);
         setStats(data.stats);
-        setTopCoupons(data.topCoupons);
+        setTopCoupons(data.topCoupons || []);
         setPagination(data.pagination);
       } else {
         console.error('Error loading bookings');
@@ -99,21 +104,23 @@ export default function AdminBookings() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({
-          id: bookingId,
-          status: newStatus
-        })
+        body: JSON.stringify({ id: bookingId, status: newStatus })
       });
 
       if (response.ok) {
-        loadBookings(); // Recargar lista
-      } else {
-        alert('Error al actualizar estado');
+        await loadBookings(); // Recargar datos
       }
     } catch (error) {
-      console.error('Error updating status:', error);
-      alert('Error de conexión');
+      console.error('Error updating booking:', error);
     }
+  };
+
+  const handleFilterChange = (key, value) => {
+    setFilters(prev => ({
+      ...prev,
+      [key]: value,
+      page: 1 // Reset page when filters change
+    }));
   };
 
   const handleLogout = () => {
@@ -121,8 +128,9 @@ export default function AdminBookings() {
     router.push('/admin');
   };
 
-  const formatDate = (date) => {
-    return new Date(date).toLocaleString('es-CR', {
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('es-CR', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
@@ -133,37 +141,45 @@ export default function AdminBookings() {
 
   const getStatusBadge = (status) => {
     const statusConfig = {
-      pending: { color: 'bg-yellow-600/20 text-yellow-400 border-yellow-600/30', icon: Clock, text: 'Pendiente' },
-      confirmed: { color: 'bg-green-600/20 text-green-400 border-green-600/30', icon: CheckCircle, text: 'Confirmada' },
-      cancelled: { color: 'bg-red-600/20 text-red-400 border-red-600/30', icon: XCircle, text: 'Cancelada' },
-      completed: { color: 'bg-blue-600/20 text-blue-400 border-blue-600/30', icon: CheckCircle, text: 'Completada' }
+      pending: { color: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30', label: 'Pendiente' },
+      confirmed: { color: 'bg-green-500/20 text-green-400 border-green-500/30', label: 'Confirmada' },
+      cancelled: { color: 'bg-red-500/20 text-red-400 border-red-500/30', label: 'Cancelada' },
+      completed: { color: 'bg-blue-500/20 text-blue-400 border-blue-500/30', label: 'Completada' }
     };
 
     const config = statusConfig[status] || statusConfig.pending;
-    const Icon = config.icon;
-
     return (
-      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${config.color}`}>
-        <Icon className="w-3 h-3 mr-1" />
-        {config.text}
+      <span className={`px-2 py-1 text-xs font-medium border rounded-full ${config.color}`}>
+        {config.label}
       </span>
     );
   };
 
-  const handleFilterChange = (key, value) => {
-    setFilters(prev => ({
-      ...prev,
-      [key]: value,
-      page: 1 // Reset page when filter changes
-    }));
+  // NUEVA FUNCIÓN: Para descargar imagen
+  const downloadImage = (imageData, booking) => {
+    if (!imageData) return;
+
+    try {
+      const link = document.createElement('a');
+      link.href = imageData;
+      link.download = `comprobante_${booking._id}_${new Date(booking.createdAt).toISOString().slice(0, 10)}.jpg`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (err) {
+      alert('Error al descargar la imagen');
+      console.error('Download error:', err);
+    }
   };
 
   if (loading && bookings.length === 0) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
-          <div className="text-white text-xl font-moderniz">Cargando Reservas...</div>
+      <div className="min-h-screen bg-black text-white font-montserrat">
+        <div className="flex items-center justify-center h-screen">
+          <div className="text-center">
+            <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-4 text-purple-400" />
+            <div className="text-lg font-medium">Cargando Reservas...</div>
+          </div>
         </div>
       </div>
     );
@@ -230,69 +246,9 @@ export default function AdminBookings() {
       </div>
 
       <div className="max-w-7xl mx-auto px-6 py-8">
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="bg-gray-900/50 border border-gray-700 p-6 rounded-lg backdrop-blur-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-400 text-sm">Total Reservas</p>
-                <p className="text-2xl font-bold font-moderniz">{stats.totalBookings || 0}</p>
-              </div>
-              <div className="bg-blue-600/20 p-3 rounded-lg">
-                <Calendar className="h-6 w-6 text-blue-400" />
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-gray-900/50 border border-gray-700 p-6 rounded-lg backdrop-blur-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-400 text-sm">Ingresos Totales</p>
-                <p className="text-2xl font-bold font-moderniz text-green-400">
-                  ₡{(stats.totalRevenue || 0).toLocaleString('es-CR')}
-                </p>
-              </div>
-              <div className="bg-green-600/20 p-3 rounded-lg">
-                <DollarSign className="h-6 w-6 text-green-400" />
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-gray-900/50 border border-gray-700 p-6 rounded-lg backdrop-blur-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-400 text-sm">Cupones Usados</p>
-                <p className="text-2xl font-bold font-moderniz text-orange-400">{stats.couponsUsed || 0}</p>
-              </div>
-              <div className="bg-orange-600/20 p-3 rounded-lg">
-                <Ticket className="h-6 w-6 text-orange-400" />
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-gray-900/50 border border-gray-700 p-6 rounded-lg backdrop-blur-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-400 text-sm">Promedio por Reserva</p>
-                <p className="text-2xl font-bold font-moderniz text-purple-400">
-                  ₡{Math.round(stats.averageBookingValue || 0).toLocaleString('es-CR')}
-                </p>
-              </div>
-              <div className="bg-purple-600/20 p-3 rounded-lg">
-                <TrendingUp className="h-6 w-6 text-purple-400" />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Filters */}
+        {/* Filtros */}
         <div className="bg-gray-900/50 border border-gray-700 rounded-lg backdrop-blur-sm p-6 mb-6">
-          <div className="flex items-center space-x-2 mb-4">
-            <Filter className="h-5 w-5 text-gray-400" />
-            <h3 className="text-lg font-semibold font-moderniz">Filtros</h3>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
             {/* Búsqueda */}
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">Buscar</label>
@@ -303,7 +259,7 @@ export default function AdminBookings() {
                   value={filters.search}
                   onChange={(e) => handleFilterChange('search', e.target.value)}
                   className="w-full pl-10 pr-4 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-600"
-                  placeholder="Comprobante o cupón..."
+                  placeholder="Buscar..."
                 />
               </div>
             </div>
@@ -336,6 +292,17 @@ export default function AdminBookings() {
                 <option value="true">Con cupón</option>
                 <option value="false">Sin cupón</option>
               </select>
+            </div>
+
+            {/* Fechas */}
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">Desde</label>
+              <input
+                type="date"
+                value={filters.dateFrom}
+                onChange={(e) => handleFilterChange('dateFrom', e.target.value)}
+                className="w-full px-4 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-600"
+              />
             </div>
 
             {/* Acciones */}
@@ -390,9 +357,44 @@ export default function AdminBookings() {
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <div className="font-mono text-sm font-medium text-purple-400">
-                          {booking.receiptDetail}
-                        </div>
+                        {/* ARREGLADO: Mejor detección de imagen */}
+                        {(booking.receiptImage && booking.receiptImage.startsWith('data:')) || booking.hasReceiptImage ? (
+                          <div className="flex items-center space-x-2">
+                            <div className="flex items-center space-x-1">
+                              <FileImage className="h-4 w-4 text-green-400" />
+                              <span className="text-xs text-green-400">
+                                {booking.receiptImageSizeFormatted || 
+                                 (booking.receiptImageSize ? `${(booking.receiptImageSize / 1024).toFixed(1)} KB` : '') || 
+                                 'Imagen'}
+                              </span>
+                            </div>
+                            <div className="flex space-x-1">
+                              <button
+                                onClick={() => {
+                                  setSelectedImage({
+                                    src: booking.receiptImage,
+                                    booking: booking
+                                  });
+                                }}
+                                className="text-blue-400 hover:text-blue-300 p-1"
+                                title="Ver imagen"
+                              >
+                                <Eye className="h-3 w-3" />
+                              </button>
+                              <button
+                                onClick={() => downloadImage(booking.receiptImage, booking)}
+                                className="text-green-400 hover:text-green-300 p-1"
+                                title="Descargar imagen"
+                              >
+                                <Download className="h-3 w-3" />
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex items-center space-x-1">
+                            <span className="text-gray-500 text-xs">Sin imagen</span>
+                          </div>
+                        )}
                       </td>
                       <td className="px-6 py-4">
                         <div className="text-sm">
@@ -406,22 +408,18 @@ export default function AdminBookings() {
                       <td className="px-6 py-4">
                         {booking.couponUsed?.code ? (
                           <div className="text-sm">
-                            <div className="font-mono font-medium text-green-400">
-                              {booking.couponUsed.code}
-                            </div>
+                            <div className="font-mono font-medium text-green-400">{booking.couponUsed.code}</div>
                             <div className="text-gray-400 text-xs">
-                              -₡{booking.discount.toLocaleString('es-CR')}
+                              -{booking.discount > 0 ? `₡${booking.discount.toLocaleString('es-CR')}` : '0'}
                             </div>
                           </div>
                         ) : (
-                          <span className="text-gray-500 text-sm">Sin cupón</span>
+                          <span className="text-gray-500 text-sm">-</span>
                         )}
                       </td>
                       <td className="px-6 py-4">
                         <div className="text-sm">
-                          <div className="font-bold text-white">
-                            ₡{booking.total.toLocaleString('es-CR')}
-                          </div>
+                          <div className="font-bold text-white">₡{booking.total.toLocaleString('es-CR')}</div>
                           {booking.discount > 0 && (
                             <div className="text-gray-400 text-xs line-through">
                               ₡{booking.subtotal.toLocaleString('es-CR')}
@@ -433,7 +431,7 @@ export default function AdminBookings() {
                         {getStatusBadge(booking.status)}
                       </td>
                       <td className="px-6 py-4">
-                        <div className="flex items-center space-x-2">
+                        <div className="flex items-center space-x-1">
                           {booking.status === 'pending' && (
                             <>
                               <button
@@ -486,7 +484,18 @@ export default function AdminBookings() {
                   <div key={booking._id} className="bg-gray-800/50 border border-gray-700 rounded-lg p-4">
                     {/* Header */}
                     <div className="flex items-center justify-between mb-3">
-                      <div className="font-mono font-bold text-purple-400">{booking.receiptDetail}</div>
+                      <div className="flex items-center space-x-2">
+                        {(booking.receiptImage && booking.receiptImage.startsWith('data:')) || booking.hasReceiptImage ? (
+                          <div className="flex items-center space-x-1">
+                            <FileImage className="h-4 w-4 text-green-400" />
+                            <span className="text-xs text-green-400">
+                              {booking.receiptImageSizeFormatted || 'Imagen'}
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-gray-500 text-xs">Sin imagen</span>
+                        )}
+                      </div>
                       {getStatusBadge(booking.status)}
                     </div>
 
@@ -518,38 +527,51 @@ export default function AdminBookings() {
                       <div>
                         <span className="text-gray-400">Cupón:</span>
                         {booking.couponUsed?.code ? (
-                          <div>
-                            <div className="font-mono font-medium text-green-400 text-xs">
-                              {booking.couponUsed.code}
-                            </div>
-                            <div className="text-gray-400 text-xs">
-                              -₡{booking.discount.toLocaleString('es-CR')}
-                            </div>
-                          </div>
+                          <div className="font-mono font-medium text-green-400">{booking.couponUsed.code}</div>
                         ) : (
-                          <div className="text-gray-500 text-xs">Sin cupón</div>
+                          <span className="text-gray-500">-</span>
                         )}
                       </div>
                     </div>
 
                     {/* Actions */}
-                    <div className="flex items-center justify-between pt-3 border-t border-gray-700">
-                      <div className="text-xs text-gray-400">
-                        {booking.ipAddress !== 'unknown' && `IP: ${booking.ipAddress}`}
+                    <div className="flex items-center justify-between">
+                      <div className="flex space-x-2">
+                        {(booking.receiptImage && booking.receiptImage.startsWith('data:')) && (
+                          <>
+                            <button
+                              onClick={() => setSelectedImage({
+                                src: booking.receiptImage,
+                                booking: booking
+                              })}
+                              className="text-blue-400 hover:text-blue-300 text-xs flex items-center space-x-1"
+                            >
+                              <Eye className="h-3 w-3" />
+                              <span>Ver</span>
+                            </button>
+                            <button
+                              onClick={() => downloadImage(booking.receiptImage, booking)}
+                              className="text-green-400 hover:text-green-300 text-xs flex items-center space-x-1"
+                            >
+                              <Download className="h-3 w-3" />
+                              <span>Descargar</span>
+                            </button>
+                          </>
+                        )}
                       </div>
-                      <div className="flex items-center space-x-2">
+                      <div className="flex space-x-1">
                         {booking.status === 'pending' && (
                           <>
                             <button
                               onClick={() => updateBookingStatus(booking._id, 'confirmed')}
-                              className="text-green-400 hover:text-green-300 transition-colors p-2 hover:bg-green-400/10 rounded"
+                              className="text-green-400 hover:text-green-300 p-1"
                               title="Confirmar"
                             >
                               <CheckCircle className="h-4 w-4" />
                             </button>
                             <button
                               onClick={() => updateBookingStatus(booking._id, 'cancelled')}
-                              className="text-red-400 hover:text-red-300 transition-colors p-2 hover:bg-red-400/10 rounded"
+                              className="text-red-400 hover:text-red-300 p-1"
                               title="Cancelar"
                             >
                               <XCircle className="h-4 w-4" />
@@ -559,8 +581,8 @@ export default function AdminBookings() {
                         {booking.status === 'confirmed' && (
                           <button
                             onClick={() => updateBookingStatus(booking._id, 'completed')}
-                            className="text-blue-400 hover:text-blue-300 transition-colors p-2 hover:bg-blue-400/10 rounded"
-                            title="Marcar como completada"
+                            className="text-blue-400 hover:text-blue-300 p-1"
+                            title="Completar"
                           >
                             <CheckCircle className="h-4 w-4" />
                           </button>
@@ -572,75 +594,83 @@ export default function AdminBookings() {
               </div>
             ) : (
               <div className="text-center py-12 text-gray-400">
-                <div className="space-y-3">
-                  <Calendar className="h-12 w-12 mx-auto opacity-50" />
-                  <p className="text-lg font-medium">No hay reservas</p>
-                  <p className="text-sm">Las nuevas reservas aparecerán aquí</p>
-                </div>
+                <Calendar className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                <p className="text-lg font-medium">No hay reservas</p>
+                <p className="text-sm">Las nuevas reservas aparecerán aquí</p>
               </div>
             )}
           </div>
 
           {/* Pagination */}
           {pagination.totalPages > 1 && (
-            <div className="p-6 border-t border-gray-700">
-              <div className="flex items-center justify-between">
-                <div className="text-sm text-gray-400">
-                  Página {pagination.currentPage} de {pagination.totalPages}
-                </div>
-                <div className="flex items-center space-x-2">
-                  <button
-                    onClick={() => handleFilterChange('page', pagination.currentPage - 1)}
-                    disabled={!pagination.hasPrev}
-                    className="px-3 py-1 bg-gray-700 hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed rounded transition-colors"
-                  >
-                    Anterior
-                  </button>
-                  <button
-                    onClick={() => handleFilterChange('page', pagination.currentPage + 1)}
-                    disabled={!pagination.hasNext}
-                    className="px-3 py-1 bg-gray-700 hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed rounded transition-colors"
-                  >
-                    Siguiente
-                  </button>
-                </div>
+            <div className="p-6 border-t border-gray-700 flex items-center justify-between">
+              <div className="text-sm text-gray-400">
+                Página {pagination.currentPage} de {pagination.totalPages}
+              </div>
+              <div className="flex space-x-2">
+                <button
+                  onClick={() => handleFilterChange('page', pagination.currentPage - 1)}
+                  disabled={!pagination.hasPrev}
+                  className="bg-gray-700 hover:bg-gray-600 disabled:bg-gray-800 disabled:cursor-not-allowed px-4 py-2 rounded text-sm transition-colors"
+                >
+                  Anterior
+                </button>
+                <button
+                  onClick={() => handleFilterChange('page', pagination.currentPage + 1)}
+                  disabled={!pagination.hasNext}
+                  className="bg-gray-700 hover:bg-gray-600 disabled:bg-gray-800 disabled:cursor-not-allowed px-4 py-2 rounded text-sm transition-colors"
+                >
+                  Siguiente
+                </button>
               </div>
             </div>
           )}
         </div>
+      </div>
 
-        {/* Top Coupons Sidebar */}
-        {topCoupons.length > 0 && (
-          <div className="mt-8 bg-gray-900/50 border border-gray-700 rounded-lg backdrop-blur-sm p-6">
-            <h3 className="text-lg font-semibold font-moderniz mb-4">Cupones Más Usados</h3>
-            <div className="space-y-3">
-              {topCoupons.map((coupon, index) => (
-                <div key={coupon._id} className="flex items-center justify-between p-3 bg-gray-800/50 rounded border border-gray-700">
-                  <div className="flex items-center space-x-3">
-                    <div className="bg-purple-600/20 p-2 rounded">
-                      <span className="text-purple-400 font-bold">#{index + 1}</span>
-                    </div>
-                    <div>
-                      <div className="font-mono font-bold text-purple-400">{coupon._id}</div>
-                      <div className="text-xs text-gray-400">
-                        {coupon.discountType === 'percentage' ? `${coupon.value}%` : 
-                         coupon.discountType === 'fixed' ? `₡${coupon.value.toLocaleString('es-CR')}` :
-                         `${coupon.value} hrs`}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-sm font-medium">{coupon.usageCount} usos</div>
-                    <div className="text-xs text-gray-400">
-                      ₡{coupon.totalSavings.toLocaleString('es-CR')} ahorrado
-                    </div>
-                  </div>
-                </div>
-              ))}
+      {/* NUEVO: Modal de imagen */}
+      {selectedImage && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-800 rounded-lg max-w-4xl max-h-[90vh] overflow-auto">
+            <div className="p-4 border-b border-gray-700 flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-semibold text-white">Comprobante de Pago</h3>
+                <p className="text-gray-400 text-sm">
+                  Reserva del {new Date(selectedImage.booking.createdAt).toLocaleDateString('es-CR')}
+                </p>
+              </div>
+              <button
+                onClick={() => setSelectedImage(null)}
+                className="text-gray-400 hover:text-white text-2xl"
+              >
+                ×
+              </button>
+            </div>
+            <div className="p-4">
+              <img
+                src={selectedImage.src}
+                alt="Comprobante"
+                className="w-full h-auto max-h-[70vh] object-contain rounded"
+              />
+            </div>
+            <div className="p-4 border-t border-gray-700 flex gap-2">
+              <button
+                onClick={() => downloadImage(selectedImage.src, selectedImage.booking)}
+                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
+              >
+                <Download className="h-4 w-4" />
+                Descargar
+              </button>
+              <button
+                onClick={() => setSelectedImage(null)}
+                className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors"
+              >
+                Cerrar
+              </button>
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

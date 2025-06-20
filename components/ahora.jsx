@@ -1,17 +1,22 @@
+'use client';
 import React, { useEffect, useState } from "react";
 
 const Ahora = () => {
   const [showCalculator, setShowCalculator] = useState(true);
   const [showDisclaimer, setShowDisclaimer] = useState(false);
   const [showPersistentBanner, setShowPersistentBanner] = useState(false);
-  const [calculatorResult, setCalculatorResult] = useState(null);
 
   // Calculator state
   const [hours, setHours] = useState('');
   const [platillos, setPlatillos] = useState(false);
   const [pedalDoble, setPedalDoble] = useState(false);
   const [coupon, setCoupon] = useState('');
-  const [receiptDetail, setReceiptDetail] = useState('');
+  
+  // Estados de imagen - NUEVO: Reemplaza receiptDetail
+  const [receiptImage, setReceiptImage] = useState(null);
+  const [receiptImagePreview, setReceiptImagePreview] = useState(null);
+  const [receiptImageError, setReceiptImageError] = useState('');
+  
   const [depositConfirmed, setDepositConfirmed] = useState(false);
   const [total, setTotal] = useState(0);
 
@@ -144,6 +149,59 @@ const Ahora = () => {
     setDiscount(0);
   };
 
+  // NUEVA FUNCIÓN: Manejar upload de imagen
+  const handleImageUpload = (event) => {
+    const file = event.target.files[0];
+    setReceiptImageError('');
+    
+    if (!file) {
+      setReceiptImage(null);
+      setReceiptImagePreview(null);
+      return;
+    }
+
+    // Validar tipo de archivo
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      setReceiptImageError('Por favor selecciona una imagen válida (JPG, PNG o WebP)');
+      return;
+    }
+
+    // Validar tamaño (máximo 5MB)
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSize) {
+      setReceiptImageError('La imagen debe ser menor a 5MB');
+      return;
+    }
+
+    // Convertir a base64
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const base64 = e.target.result;
+      setReceiptImage({
+        data: base64,
+        type: file.type,
+        size: file.size,
+        name: file.name
+      });
+      setReceiptImagePreview(base64);
+    };
+    reader.onerror = () => {
+      setReceiptImageError('Error al procesar la imagen');
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // NUEVA FUNCIÓN: Remover imagen
+  const removeImage = () => {
+    setReceiptImage(null);
+    setReceiptImagePreview(null);
+    setReceiptImageError('');
+    // Reset file input
+    const fileInput = document.getElementById('receipt-image-input');
+    if (fileInput) fileInput.value = '';
+  };
+
   // EFECTO ACTUALIZADO - Recalcular cuando cambien los valores
   React.useEffect(() => {
     const subtotal = calculateSubtotal();
@@ -153,7 +211,7 @@ const Ahora = () => {
   }, [hours, platillos, pedalDoble, appliedCoupon]);
 
   const handleProceedToBooking = async () => {
-    if (hours && parseFloat(hours) > 0 && receiptDetail.trim() && depositConfirmed) {
+    if (hours && parseFloat(hours) > 0 && receiptImage && depositConfirmed) {
       try {
         console.log('📝 Creando reserva...');
         
@@ -167,12 +225,17 @@ const Ahora = () => {
           subtotal: calculateSubtotal(),
           discount: discount,
           total: total,
-          receiptDetail: receiptDetail.trim(),
+          receiptImage: receiptImage.data, // Base64 de la imagen
+          receiptImageType: receiptImage.type,
+          receiptImageSize: receiptImage.size,
           couponCode: appliedCoupon ? appliedCoupon.code : null,
           appliedCoupon: appliedCoupon
         };
         
-        console.log('📋 Datos de reserva:', bookingData);
+        console.log('📋 Datos de reserva:', {
+          ...bookingData,
+          receiptImage: '[IMAGE_DATA]' // No logear la imagen completa
+        });
         
         // Enviar al backend
         const response = await fetch('/api/bookings', {
@@ -289,7 +352,7 @@ const Ahora = () => {
             allowFullScreen
           ></iframe>
 
-          {/* Calculator Overlay */}
+          {/* Calculator Overlay - RESTAURADO AL ORIGINAL */}
           {showCalculator && (
             <div className="absolute inset-0 bg-black/15 flex items-center justify-center z-10 p-4">
               <div className="bg-black/70 backdrop-blur-sm border-[0.5px] border-white/70 shadow-2xl w-full max-w-6xl max-h-[90vh] overflow-y-auto">
@@ -327,7 +390,7 @@ const Ahora = () => {
                       />
                     </div>
                     
-                    {/* Add-ons */}
+                    {/* Add-ons - RESTAURADO COMO BOTONES */}
                     <div className="mb-6">
                       <h5 className="text-white font-medium mb-3">Servicios adicionales:</h5>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -371,6 +434,7 @@ const Ahora = () => {
                           type="text"
                           value={coupon}
                           onChange={(e) => setCoupon(e.target.value.toUpperCase())}
+                          onKeyPress={(e) => e.key === 'Enter' && validateCoupon()}
                           className="flex-1 px-3 py-2 bg-gray-800 border border-gray-600 text-white focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                           placeholder="DESCUENTO10 o 2HRSFREE"
                           disabled={couponValidating}
@@ -378,7 +442,7 @@ const Ahora = () => {
                         {appliedCoupon ? (
                           <button
                             onClick={removeCoupon}
-                            className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-medium transition-colors"
+                            className="px-4 py-2 bg-red-600 text-white hover:bg-red-700 transition-colors"
                             title="Remover cupón"
                           >
                             <i className="fas fa-times"></i>
@@ -386,8 +450,8 @@ const Ahora = () => {
                         ) : (
                           <button
                             onClick={validateCoupon}
-                            disabled={couponValidating || !coupon.trim()}
-                            className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            disabled={!coupon.trim() || couponValidating}
+                            className="px-4 py-2 bg-purple-600 text-white hover:bg-purple-700 disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors"
                           >
                             {couponValidating ? (
                               <i className="fas fa-spinner fa-spin"></i>
@@ -400,45 +464,82 @@ const Ahora = () => {
                       
                       {/* Mensaje del cupón */}
                       {couponMessage && (
-                        <div className={`mt-2 text-sm ${
-                          couponMessage.startsWith('✅') ? 'text-green-400' : 'text-red-400'
-                        }`}>
+                        <p className={`text-xs mt-2 ${couponMessage.includes('✅') ? 'text-green-400' : 'text-red-400'}`}>
                           {couponMessage}
-                        </div>
+                        </p>
                       )}
-
-                      {/* Información del cupón aplicado */}
+                      
+                      {/* Mostrar cupón aplicado */}
                       {appliedCoupon && (
-                        <div className="mt-2 p-3 bg-green-900/30 border border-green-600/50 rounded">
-                          <div className="flex items-center gap-2 text-green-400 text-sm">
-                            <i className="fas fa-ticket-alt"></i>
-                            <span className="font-medium">{appliedCoupon.code}</span>
-                            <span className="text-green-300">
-                              {appliedCoupon.discountType === 'percentage' && `${appliedCoupon.value}% de descuento`}
-                              {appliedCoupon.discountType === 'fixed' && `₡${appliedCoupon.value.toLocaleString('es-CR')} de descuento`}
-                              {appliedCoupon.discountType === 'hours' && `${appliedCoupon.value} hora${appliedCoupon.value > 1 ? 's' : ''} gratis`}
+                        <div className="mt-2 p-2 bg-green-900/20 border border-green-600/30 rounded text-xs text-green-300">
+                          <div className="flex items-center justify-between">
+                            <span>
+                              <strong>{appliedCoupon.code}</strong>
+                              {appliedCoupon.discountType === 'percentage' && ` - ${appliedCoupon.value}%`}
+                              {appliedCoupon.discountType === 'fixed' && ` - ₡${appliedCoupon.value.toLocaleString('es-CR')}`}
+                              {appliedCoupon.discountType === 'hours' && ` - ${appliedCoupon.value} hr${appliedCoupon.value > 1 ? 's' : ''} gratis`}
                             </span>
                           </div>
                         </div>
                       )}
                     </div>
 
-                    {/* Detalle del comprobante */}
+                    {/* NUEVA SECCIÓN: Upload de imagen del comprobante */}
                     <div className="mb-4">
                       <label className="block text-sm font-medium text-gray-300 mb-2">
-                        Detalle del comprobante: <span className="text-red-500">*</span>
+                        Carga tu comprobante: <span className="text-red-500">*</span>
                       </label>
-                      <input
-                        type="text"
-                        value={receiptDetail}
-                        onChange={(e) => setReceiptDetail(e.target.value)}
-                        className="w-full px-3 py-2 bg-gray-800 border border-gray-600 text-white focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent"
-                        placeholder="Nombre-dia-hora"
-                        required
-                      />
-                      <p className="text-xs text-gray-400 mt-1">
-                        Ejemplo: Juan-15Mar-3pm
-                      </p>
+                      
+                      {/* Input de archivo */}
+                      <div className="mb-3">
+                        <input
+                          id="receipt-image-input"
+                          type="file"
+                          accept="image/jpeg,image/jpg,image/png,image/webp"
+                          onChange={handleImageUpload}
+                          className="w-full px-3 py-2 bg-gray-800 border border-gray-600 text-white focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent file:mr-4 file:py-1 file:px-3 file:border-0 file:text-sm file:font-medium file:bg-purple-600 file:text-white hover:file:bg-purple-700"
+                          required
+                        />
+                        <p className="text-xs text-gray-400 mt-1">
+                          Formatos: JPG, PNG, WebP (máx. 5MB)
+                        </p>
+                      </div>
+
+                      {/* Error de imagen */}
+                      {receiptImageError && (
+                        <p className="text-red-400 text-xs mb-2">
+                          {receiptImageError}
+                        </p>
+                      )}
+
+                      {/* Preview de imagen */}
+                      {receiptImagePreview && (
+                        <div className="relative bg-gray-800 border border-gray-600 p-3 mb-3">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-green-400 text-xs font-medium">
+                              ✅ Comprobante cargado
+                            </span>
+                            <button
+                              onClick={removeImage}
+                              className="text-red-400 hover:text-red-300 text-sm"
+                            >
+                              Eliminar
+                            </button>
+                          </div>
+                          <div className="relative max-h-32 overflow-hidden border border-gray-600">
+                            <img
+                              src={receiptImagePreview}
+                              alt="Preview del comprobante"
+                              className="w-full h-auto object-contain"
+                            />
+                          </div>
+                          {receiptImage && (
+                            <p className="text-xs text-gray-400 mt-1">
+                              {receiptImage.name} ({(receiptImage.size / 1024).toFixed(1)} KB)
+                            </p>
+                          )}
+                        </div>
+                      )}
                     </div>
 
                     {/* Botón de WhatsApp */}
@@ -589,9 +690,9 @@ const Ahora = () => {
                     <div className="space-y-3">
                       <button
                         onClick={handleProceedToBooking}
-                        disabled={!hours || parseFloat(hours) <= 0 || !receiptDetail.trim() || !depositConfirmed}
+                        disabled={!hours || parseFloat(hours) <= 0 || !receiptImage || !depositConfirmed}
                         className={`w-full py-3 px-4 font-bold transition-all ${
-                          hours && parseFloat(hours) > 0 && receiptDetail.trim() && depositConfirmed
+                          hours && parseFloat(hours) > 0 && receiptImage && depositConfirmed
                             ? 'bg-gradient-to-r from-cyan-200 to-cyan-300 text-purple-900 hover:from-cyan-300 hover:to-cyan-400 shadow-lg transform hover:scale-105'
                             : 'bg-gray-700 text-gray-400 cursor-not-allowed'
                         }`}
@@ -637,6 +738,19 @@ const Ahora = () => {
                   </button>
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* Botón flotante - SOLO cuando está en "Solo consultar horarios" */}
+          {showPersistentBanner && (
+            <div className="fixed bottom-8 right-8 z-30">
+              <button
+                onClick={handleBackToCalculator}
+                className="bg-gradient-to-r from-purple-600 to-purple-700 text-white px-6 py-3 rounded-full font-bold shadow-lg hover:from-purple-700 hover:to-purple-800 transition-all flex items-center gap-2 animate-pulse"
+              >
+                <i className="fas fa-calculator"></i>
+                Calcular Sesión
+              </button>
             </div>
           )}
         </div>

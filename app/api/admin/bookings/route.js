@@ -29,7 +29,13 @@ export async function GET(req) {
     const dateTo = searchParams.get('dateTo');
     const search = searchParams.get('search');
     const hasCoupon = searchParams.get('hasCoupon');
+    const includeImages = searchParams.get('includeImages') !== 'false'; // Por defecto incluir imágenes
     
+    console.log('📋 Parámetros recibidos:', {
+      page, limit, status, includeImages,
+      search: search || 'ninguno'
+    });
+
     // Construir filtros
     const filters = {};
     
@@ -44,8 +50,9 @@ export async function GET(req) {
     }
     
     if (search) {
+      // Buscar en campos que podrían contener el término de búsqueda
       filters.$or = [
-        { receiptDetail: { $regex: search, $options: 'i' } },
+        { ipAddress: { $regex: search, $options: 'i' } },
         { 'couponUsed.code': { $regex: search, $options: 'i' } }
       ];
     }
@@ -61,9 +68,26 @@ export async function GET(req) {
     // Calcular skip para paginación
     const skip = (page - 1) * limit;
     
+    // Seleccionar campos - ACTUALIZADO para incluir campos de imagen
+    let selectFields = [
+      'hours', 'services', 'subtotal', 'discount', 'total', 'status', 
+      'createdAt', 'updatedAt', 'ipAddress', 'userAgent',
+      'couponUsed'
+    ];
+    
+    // SIEMPRE incluir campos de imagen para el admin
+    if (includeImages) {
+      selectFields.push('receiptImage', 'receiptImageType', 'receiptImageSize');
+      console.log('🖼️ Incluyendo campos de imagen en la consulta');
+    }
+    
+    const selectString = selectFields.join(' ');
+    console.log('📝 Campos seleccionados:', selectString);
+    
     // Obtener reservas con paginación
     const [bookings, totalCount] = await Promise.all([
       Booking.find(filters)
+        .select(selectString)
         .populate('couponUsed.couponId', 'code discountType value active')
         .sort({ createdAt: -1 })
         .skip(skip)
@@ -74,15 +98,44 @@ export async function GET(req) {
     
     console.log(`📄 Encontradas ${bookings.length} reservas de ${totalCount} total`);
     
+    // DEBUG: Verificar si las imágenes están presentes
+    if (bookings.length > 0) {
+      const firstBooking = bookings[0];
+      console.log('🔍 Primera reserva (campos de imagen):', {
+        id: firstBooking._id,
+        hasReceiptImage: !!firstBooking.receiptImage,
+        receiptImageType: firstBooking.receiptImageType,
+        receiptImageSize: firstBooking.receiptImageSize,
+        imageDataLength: firstBooking.receiptImage ? firstBooking.receiptImage.length : 0
+      });
+    }
+    
+    // Procesar bookings para agregar información adicional
+    const processedBookings = bookings.map(booking => {
+      const processed = {
+        ...booking,
+        hasReceiptImage: !!booking.receiptImage,
+        receiptImageSizeFormatted: booking.receiptImageSize 
+          ? `${(booking.receiptImageSize / 1024).toFixed(1)} KB`
+          : null
+      };
+      
+      // Asegurar que la imagen esté presente si existe
+      if (booking.receiptImage && includeImages) {
+        processed.receiptImage = booking.receiptImage;
+      }
+      
+      return processed;
+    });
+    
+    console.log(`✅ Procesadas ${processedBookings.length} reservas. Con imágenes: ${processedBookings.filter(b => b.hasReceiptImage).length}`);
+    
     // Obtener estadísticas generales
     const stats = await Booking.getStats();
     
-    // Obtener top cupones
-    const topCoupons = await Booking.getTopCoupons(5);
-    
     return NextResponse.json({
       success: true,
-      bookings,
+      bookings: processedBookings,
       pagination: {
         currentPage: page,
         totalPages: Math.ceil(totalCount / limit),
@@ -91,7 +144,11 @@ export async function GET(req) {
         hasPrev: page > 1
       },
       stats,
-      topCoupons
+      debug: {
+        includeImages,
+        bookingsWithImages: processedBookings.filter(b => b.hasReceiptImage).length,
+        totalBookings: processedBookings.length
+      }
     });
     
   } catch (error) {
@@ -160,7 +217,8 @@ export async function PUT(req) {
       booking: {
         id: booking._id,
         status: booking.status,
-        updatedAt: booking.updatedAt
+        updatedAt: booking.updatedAt,
+        hasReceiptImage: !!booking.receiptImageType
       },
       message: 'Reserva actualizada exitosamente'
     });
@@ -206,13 +264,24 @@ export async function DELETE(req) {
       }, { status: 404 });
     }
     
+    // Obtener información antes de eliminar para logging
+    const bookingInfo = {
+      id: booking._id,
+      hasImage: !!booking.receiptImage,
+      imageSize: booking.receiptImageSize || 0
+    };
+    
     await Booking.findByIdAndDelete(id);
     
     console.log(`✅ Reserva ${id} eliminada exitosamente`);
+    if (bookingInfo.hasImage) {
+      console.log(`🖼️ Se eliminó imagen de ${(bookingInfo.imageSize / 1024).toFixed(1)} KB`);
+    }
     
     return NextResponse.json({
       success: true,
-      message: 'Reserva eliminada exitosamente'
+      message: 'Reserva eliminada exitosamente',
+      deletedBooking: bookingInfo
     });
     
   } catch (error) {

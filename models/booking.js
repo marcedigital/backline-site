@@ -39,11 +39,18 @@ const BookingSchema = new mongoose.Schema({
     discountAmount: { type: Number, default: 0 }
   },
   
-  // Datos del cliente
-  receiptDetail: {
-    type: String,
-    required: true,
-    trim: true
+  // CAMPO ACTUALIZADO: Ahora usamos imagen en lugar de texto
+  receiptImage: {
+    type: String, // Base64 de la imagen
+    required: true
+  },
+  receiptImageType: {
+    type: String, // Tipo MIME de la imagen (image/jpeg, image/png, etc.)
+    required: true
+  },
+  receiptImageSize: {
+    type: Number, // Tamaño en bytes para control
+    required: true
   },
   
   // Metadata del sistema
@@ -72,7 +79,6 @@ const BookingSchema = new mongoose.Schema({
 BookingSchema.index({ createdAt: -1 });
 BookingSchema.index({ 'couponUsed.couponId': 1 });
 BookingSchema.index({ status: 1 });
-BookingSchema.index({ receiptDetail: 'text' });
 
 // Virtual para calcular duración desde creación
 BookingSchema.virtual('timeSinceCreated').get(function() {
@@ -89,6 +95,15 @@ BookingSchema.virtual('couponSummary').get(function() {
     value: this.couponUsed.value,
     savedAmount: this.couponUsed.discountAmount
   };
+});
+
+// Virtual para obtener el tamaño de la imagen en formato legible
+BookingSchema.virtual('receiptImageSizeFormatted').get(function() {
+  if (!this.receiptImageSize) return 'N/A';
+  
+  const sizes = ['bytes', 'KB', 'MB'];
+  const i = Math.floor(Math.log(this.receiptImageSize) / Math.log(1024));
+  return Math.round(this.receiptImageSize / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i];
 });
 
 // Método estático para obtener estadísticas
@@ -115,9 +130,7 @@ BookingSchema.statics.getStats = async function(dateRange = {}) {
         couponsUsed: {
           $sum: { $cond: [{ $ne: ['$couponUsed.code', null] }, 1, 0] }
         },
-        statusBreakdown: {
-          $push: '$status'
-        }
+        totalImageSize: { $sum: '$receiptImageSize' } // NUEVO: Total de espacio usado por imágenes
       }
     }
   ]);
@@ -129,31 +142,67 @@ BookingSchema.statics.getStats = async function(dateRange = {}) {
     averageBookingValue: 0,
     averageHours: 0,
     couponsUsed: 0,
-    statusBreakdown: []
+    totalImageSize: 0
   };
 };
 
-// Método estático para obtener top cupones
-BookingSchema.statics.getTopCoupons = async function(limit = 10) {
-  return await this.aggregate([
-    { $match: { 'couponUsed.code': { $ne: null } } },
-    {
-      $group: {
-        _id: '$couponUsed.code',
-        usageCount: { $sum: 1 },
-        totalSavings: { $sum: '$couponUsed.discountAmount' },
-        lastUsed: { $max: '$createdAt' },
-        discountType: { $first: '$couponUsed.discountType' },
-        value: { $first: '$couponUsed.value' }
-      }
-    },
-    { $sort: { usageCount: -1 } },
-    { $limit: limit }
-  ]);
+// Método para limpiar imágenes de reservas antiguas (>6 meses)
+BookingSchema.statics.cleanOldImages = async function() {
+  console.log('🧹 Iniciando limpieza de imágenes antiguas...');
+  
+  const sixMonthsAgo = new Date();
+  sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+  
+  try {
+    // Buscar reservas mayores a 6 meses que tengan imagen
+    const oldBookings = await this.find({
+      createdAt: { $lt: sixMonthsAgo },
+      receiptImage: { $exists: true, $ne: null }
+    });
+    
+    console.log(`📊 Encontradas ${oldBookings.length} reservas con imágenes para limpiar`);
+    
+    let totalSizeFreed = 0;
+    let cleanedCount = 0;
+    
+    // Limpiar imágenes una por una
+    for (const booking of oldBookings) {
+      const imageSize = booking.receiptImageSize || 0;
+      
+      await this.findByIdAndUpdate(booking._id, {
+        $unset: {
+          receiptImage: 1,
+          receiptImageType: 1,
+          receiptImageSize: 1
+        }
+      });
+      
+      totalSizeFreed += imageSize;
+      cleanedCount++;
+    }
+    
+    console.log(`✅ Limpieza completada:`);
+    console.log(`- Imágenes eliminadas: ${cleanedCount}`);
+    console.log(`- Espacio liberado: ${(totalSizeFreed / 1024 / 1024).toFixed(2)} MB`);
+    
+    return {
+      success: true,
+      cleanedCount,
+      totalSizeFreed,
+      message: `Se eliminaron ${cleanedCount} imágenes, liberando ${(totalSizeFreed / 1024 / 1024).toFixed(2)} MB`
+    };
+    
+  } catch (error) {
+    console.error('❌ Error durante la limpieza:', error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
 };
 
-// Método para actualizar estado
-BookingSchema.methods.updateStatus = async function(newStatus) {
+// Método de instancia para actualizar estado (mantener compatibilidad)
+BookingSchema.methods.updateStatus = function(newStatus) {
   this.status = newStatus;
   
   const now = new Date();
@@ -169,7 +218,7 @@ BookingSchema.methods.updateStatus = async function(newStatus) {
       break;
   }
   
-  return await this.save();
+  return this.save();
 };
 
 export default mongoose.models.Booking || mongoose.model('Booking', BookingSchema);
