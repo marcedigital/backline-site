@@ -49,56 +49,52 @@ const Ahora = () => {
     const numHours = parseFloat(hours);
     let basePrice = 10000; // Primera hora
     if (numHours > 1) {
-      basePrice += (numHours - 1) * 5000; // Horas extra
+      basePrice += (numHours - 1) * 8000; // Horas adicionales
     }
     
-    let extras = 0;
-    if (platillos) extras += numHours * 2000;
-    if (pedalDoble) extras += numHours * 2000;
+    let serviceCost = 0;
+    if (platillos) serviceCost += 2000;
+    if (pedalDoble) serviceCost += 2000;
     
-    return basePrice + extras;
+    return basePrice + serviceCost;
   };
 
-  // NUEVA FUNCIÓN - Calcular descuento ACTUALIZADA PARA INCLUIR HORAS
-  const calculateDiscount = (subtotal, coupon, currentHours) => {
-    if (!coupon) return 0;
+  // FUNCIÓN ACTUALIZADA - Calcular descuento incluyendo horas gratis
+  const calculateDiscount = (subtotal, appliedCoupon, hours) => {
+    if (!appliedCoupon || !hours || parseFloat(hours) <= 0) return 0;
     
-    if (coupon.discountType === 'percentage') {
-      return Math.round(subtotal * (coupon.value / 100));
-    } else if (coupon.discountType === 'fixed') {
-      return Math.min(coupon.value, subtotal); // No puede ser mayor al subtotal
-    } else if (coupon.discountType === 'hours') {
-      // Cupón de horas gratis - calcular descuento basado en las horas del cupón
-      const numHours = parseFloat(currentHours) || 0;
-      const freeHours = Math.min(coupon.value, numHours);
+    const numHours = parseFloat(hours);
+    
+    if (appliedCoupon.discountType === 'percentage') {
+      return subtotal * (appliedCoupon.value / 100);
+    } 
+    
+    if (appliedCoupon.discountType === 'fixed') {
+      return Math.min(appliedCoupon.value, subtotal);
+    }
+    
+    // NUEVO: Manejo para cupones de horas gratis
+    if (appliedCoupon.discountType === 'hours') {
+      const freeHours = appliedCoupon.value;
       
-      if (freeHours <= 0) return 0;
-      
-      // Calcular el costo de las horas gratis
+      // Calcular descuento basado en horas gratuitas
       let hoursDiscount = 0;
       
-      if (freeHours <= 1) {
-        // Si son 1 hora o menos, descontar proporcionalmente la primera hora
-        hoursDiscount = 10000 * freeHours;
+      if (freeHours >= numHours) {
+        // Las horas gratis cubren toda la sesión
+        hoursDiscount = 10000; // Primera hora gratis
+        if (numHours > 1) {
+          hoursDiscount += Math.min(freeHours - 1, numHours - 1) * 8000;
+        }
       } else {
-        // Si son más de 1 hora, descontar primera hora completa + horas adicionales
-        hoursDiscount = 10000; // Primera hora
-        hoursDiscount += (freeHours - 1) * 5000; // Horas adicionales
+        // Las horas gratis cubren parcialmente
+        hoursDiscount = 10000; // Primera hora gratis
+        if (freeHours > 1) {
+          hoursDiscount += (freeHours - 1) * 8000; // Horas adicionales gratis
+        }
       }
       
-      // También descontar servicios adicionales proporcionalmente
-      if (numHours > 0) {
-        const proportionalExtras = (freeHours / numHours);
-        
-        // Calcular extras actuales
-        let currentExtras = 0;
-        if (platillos) currentExtras += numHours * 2000;
-        if (pedalDoble) currentExtras += numHours * 2000;
-        
-        const extrasDiscount = Math.round(currentExtras * proportionalExtras);
-        hoursDiscount += extrasDiscount;
-      }
-      
+      // No puede ser mayor al subtotal
       return Math.min(hoursDiscount, subtotal);
     }
     
@@ -322,7 +318,8 @@ const Ahora = () => {
                 <div className="flex items-center text-black">
                   <span className="mr-2">⚠️</span>
                   <span className="font-medium text-sm">
-                    <strong>Importante:</strong> Las reservas se confirman únicamente con depósito previo. Las reservas sin comprobante serán canceladas.
+                    <strong>Importante:</strong> Las reservas se confirman únicamente con depósito previo.
+                    Las reservas sin comprobante serán canceladas.
                   </span>
                 </div>
                 <button
@@ -335,22 +332,57 @@ const Ahora = () => {
             </div>
           )}
 
-          {/* EasyWeek Widget */}
-          <iframe
-            src="https://booking.easyweek.io/backline-studios"
-            style={{
-              border: "0",
-              width: "100%",
-              maxWidth: "1800px",
-              height: "700px",
-              opacity: showCalculator ? 0.3 : 1,
-              pointerEvents: showCalculator ? 'none' : 'auto',
-              marginTop: showPersistentBanner ? '60px' : '0px'
-            }}
-            frameBorder="0"
-            referrerPolicy="origin"
-            allowFullScreen
-          ></iframe>
+          {/* Container del widget con botón integrado */}
+          <div className="relative w-full max-w-[1800px]">
+            {/* EasyWeek Widget */}
+            <iframe
+              src="https://booking.easyweek.io/backline-studios"
+              style={{
+                border: "0",
+                width: "100%",
+                height: "700px",
+                opacity: showCalculator ? 0.3 : 1,
+                pointerEvents: showCalculator ? 'none' : 'auto',
+                marginTop: showPersistentBanner ? '60px' : '0px',
+              }}
+              className="transition-opacity duration-300"
+            />
+            
+            {/* Botón integrado - SOLO cuando está en "Solo consultar horarios" */}
+            {showPersistentBanner && (
+              <>
+                {/* Desktop: Botón en esquina inferior derecha del widget */}
+                <div className="hidden md:block absolute bottom-4 right-4 z-20">
+                  <button
+                    onClick={handleBackToCalculator}
+                    className="bg-gradient-to-r from-purple-600 to-purple-700 text-white px-6 py-4 font-bold shadow-xl hover:from-purple-700 hover:to-purple-800 transition-all flex items-center gap-3 border-2 border-white/20 backdrop-blur-sm"
+                    style={{ 
+                      borderRadius: '0px',
+                      minWidth: '200px'
+                    }}
+                  >
+                    <i className="fas fa-calculator text-lg"></i>
+                    <span className="text-base">Calcular Sesión</span>
+                  </button>
+                </div>
+
+                {/* Mobile: Botón en la parte inferior completa */}
+                <div className="md:hidden absolute bottom-0 left-0 right-0 z-20">
+                  <button
+                    onClick={handleBackToCalculator}
+                    className="w-full bg-gradient-to-r from-purple-600 to-purple-700 text-white py-4 px-6 font-bold shadow-xl hover:from-purple-700 hover:to-purple-800 transition-all flex items-center justify-center gap-3 border-t-2 border-white/20 backdrop-blur-sm"
+                    style={{ 
+                      borderRadius: '0px',
+                      fontSize: '16px'
+                    }}
+                  >
+                    <i className="fas fa-calculator text-lg"></i>
+                    <span>Calcular Sesión</span>
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
 
           {/* Calculator Overlay - RESTAURADO AL ORIGINAL */}
           {showCalculator && (
@@ -398,13 +430,13 @@ const Ahora = () => {
                           onClick={() => setPlatillos(!platillos)}
                           className={`p-3 border-2 transition-all text-sm font-medium ${
                             platillos
-                              ? 'bg-purple-600 border-purple-600 text-white'
-                              : 'bg-gray-900 border-gray-600 text-gray-300 hover:border-purple-600 hover:text-purple-300'
+                              ? 'bg-purple-600/20 border-purple-600 text-purple-300'
+                              : 'bg-gray-800 border-gray-600 text-gray-400 hover:border-gray-500'
                           }`}
                         >
-                          <div className="text-center">
-                            <div className="mb-1">Platillos</div>
-                            <div className="text-xs opacity-80">₡2,000/hr</div>
+                          <div className="flex items-center justify-between">
+                            <span>Platillos {platillos ? '✓' : ''}</span>
+                            <span className="text-xs">+₡2,000</span>
                           </div>
                         </button>
                         
@@ -412,19 +444,19 @@ const Ahora = () => {
                           onClick={() => setPedalDoble(!pedalDoble)}
                           className={`p-3 border-2 transition-all text-sm font-medium ${
                             pedalDoble
-                              ? 'bg-purple-600 border-purple-600 text-white'
-                              : 'bg-gray-900 border-gray-600 text-gray-300 hover:border-purple-600 hover:text-purple-300'
+                              ? 'bg-purple-600/20 border-purple-600 text-purple-300'
+                              : 'bg-gray-800 border-gray-600 text-gray-400 hover:border-gray-500'
                           }`}
                         >
-                          <div className="text-center">
-                            <div className="mb-1">Pedal Doble</div>
-                            <div className="text-xs opacity-80">₡2,000/hr</div>
+                          <div className="flex items-center justify-between">
+                            <span>Pedal doble {pedalDoble ? '✓' : ''}</span>
+                            <span className="text-xs">+₡2,000</span>
                           </div>
                         </button>
                       </div>
                     </div>
-                    
-                    {/* SECCIÓN DE CUPÓN ACTUALIZADA */}
+
+                    {/* SECCIÓN DE CUPONES ACTUALIZADA */}
                     <div className="mb-6">
                       <label className="block text-sm font-medium text-gray-300 mb-2">
                         Código de cupón (opcional):
@@ -434,52 +466,53 @@ const Ahora = () => {
                           type="text"
                           value={coupon}
                           onChange={(e) => setCoupon(e.target.value.toUpperCase())}
-                          onKeyPress={(e) => e.key === 'Enter' && validateCoupon()}
-                          className="flex-1 px-3 py-2 bg-gray-800 border border-gray-600 text-white focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent"
-                          placeholder="DESCUENTO10 o 2HRSFREE"
+                          className="flex-1 px-3 py-2 bg-gray-800 border border-gray-600 text-white focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent placeholder-gray-400"
+                          placeholder="Ej: PRIMERA20"
                           disabled={couponValidating}
                         />
-                        {appliedCoupon ? (
-                          <button
-                            onClick={removeCoupon}
-                            className="px-4 py-2 bg-red-600 text-white hover:bg-red-700 transition-colors"
-                            title="Remover cupón"
-                          >
-                            <i className="fas fa-times"></i>
-                          </button>
-                        ) : (
-                          <button
-                            onClick={validateCoupon}
-                            disabled={!coupon.trim() || couponValidating}
-                            className="px-4 py-2 bg-purple-600 text-white hover:bg-purple-700 disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors"
-                          >
-                            {couponValidating ? (
-                              <i className="fas fa-spinner fa-spin"></i>
-                            ) : (
-                              'Aplicar'
-                            )}
-                          </button>
-                        )}
+                        <button
+                          onClick={validateCoupon}
+                          disabled={!coupon.trim() || couponValidating}
+                          className={`px-4 py-2 font-medium transition-colors ${
+                            couponValidating
+                              ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                              : coupon.trim()
+                              ? 'bg-purple-600 hover:bg-purple-700 text-white'
+                              : 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                          }`}
+                        >
+                          {couponValidating ? '...' : 'Aplicar'}
+                        </button>
                       </div>
                       
-                      {/* Mensaje del cupón */}
+                      {/* Mensaje de cupón */}
                       {couponMessage && (
-                        <p className={`text-xs mt-2 ${couponMessage.includes('✅') ? 'text-green-400' : 'text-red-400'}`}>
+                        <p className={`text-xs mt-2 ${
+                          couponMessage.startsWith('✅') ? 'text-green-400' : 'text-red-400'
+                        }`}>
                           {couponMessage}
                         </p>
                       )}
                       
-                      {/* Mostrar cupón aplicado */}
+                      {/* Cupón aplicado */}
                       {appliedCoupon && (
-                        <div className="mt-2 p-2 bg-green-900/20 border border-green-600/30 rounded text-xs text-green-300">
+                        <div className="mt-3 p-3 bg-green-600/20 border border-green-600/50">
                           <div className="flex items-center justify-between">
-                            <span>
-                              <strong>{appliedCoupon.code}</strong>
-                              {appliedCoupon.discountType === 'percentage' && ` - ${appliedCoupon.value}%`}
-                              {appliedCoupon.discountType === 'fixed' && ` - ₡${appliedCoupon.value.toLocaleString('es-CR')}`}
-                              {appliedCoupon.discountType === 'hours' && ` - ${appliedCoupon.value} hr${appliedCoupon.value > 1 ? 's' : ''} gratis`}
+                            <span className="text-green-300 text-sm font-medium">
+                              ✅ {appliedCoupon.code}{getDiscountDescription(appliedCoupon)}
                             </span>
+                            <button
+                              onClick={removeCoupon}
+                              className="text-red-400 hover:text-red-300 text-xs"
+                            >
+                              Remover
+                            </button>
                           </div>
+                          {appliedCoupon.discountType === 'hours' && (
+                            <span className="text-green-400 text-xs block mt-1">
+                              {appliedCoupon.value} hr{appliedCoupon.value > 1 ? 's' : ''} gratis
+                            </span>
+                          )}
                         </div>
                       )}
                     </div>
@@ -589,86 +622,89 @@ const Ahora = () => {
                       <div className="space-y-2 text-sm">
                         {hours && parseFloat(hours) > 0 ? (
                           <>
-                            <div className="flex justify-between text-gray-300">
-                              <span>Primera hora</span>
-                              <span>₡10,000</span>
+                            {/* Primera hora */}
+                            <div className="flex justify-between">
+                              <span className="text-gray-300">Primera hora de ensayo</span>
+                              <span className="text-white">₡10,000</span>
                             </div>
                             
+                            {/* Horas adicionales */}
                             {parseFloat(hours) > 1 && (
-                              <div className="flex justify-between text-gray-300">
-                                <span>{(parseFloat(hours) - 1)} hrs adicionales</span>
-                                <span>₡{((parseFloat(hours) - 1) * 5000).toLocaleString('es-CR')}</span>
+                              <div className="flex justify-between">
+                                <span className="text-gray-300">
+                                  {parseFloat(hours) - 1} hora{parseFloat(hours) - 1 !== 1 ? 's' : ''} adicional{parseFloat(hours) - 1 !== 1 ? 'es' : ''} (₡8,000 c/u)
+                                </span>
+                                <span className="text-white">
+                                  ₡{((parseFloat(hours) - 1) * 8000).toLocaleString('es-CR')}
+                                </span>
                               </div>
                             )}
                             
+                            {/* Servicios adicionales */}
                             {platillos && (
-                              <div className="flex justify-between text-gray-300">
-                                <span>Platillos ({parseFloat(hours)} hrs)</span>
-                                <span>₡{(parseFloat(hours) * 2000).toLocaleString('es-CR')}</span>
+                              <div className="flex justify-between">
+                                <span className="text-gray-300">Platillos</span>
+                                <span className="text-white">₡2,000</span>
                               </div>
                             )}
                             
                             {pedalDoble && (
-                              <div className="flex justify-between text-gray-300">
-                                <span>Pedal doble ({parseFloat(hours)} hrs)</span>
-                                <span>₡{(parseFloat(hours) * 2000).toLocaleString('es-CR')}</span>
-                              </div>
-                            )}
-
-                            {/* Mostrar subtotal si hay descuento */}
-                            {discount > 0 && (
-                              <>
-                                <div className="border-t border-gray-600 pt-2 mt-3">
-                                  <div className="flex justify-between text-gray-300">
-                                    <span>Subtotal</span>
-                                    <span>₡{calculateSubtotal().toLocaleString('es-CR')}</span>
-                                  </div>
-                                  <div className="flex justify-between text-green-400">
-                                    <span>
-                                      Descuento ({appliedCoupon.code}){getDiscountDescription(appliedCoupon)}
-                                    </span>
-                                    <span>-₡{discount.toLocaleString('es-CR')}</span>
-                                  </div>
-                                </div>
-                              </>
-                            )}
-                            
-                            <div className="border-t border-gray-600 pt-2 mt-3">
-                              <div className="flex justify-between items-center">
-                                <span className="font-bold text-white">TOTAL</span>
-                                <span className="text-xl font-bold text-purple-600">
-                                  ₡{total.toLocaleString('es-CR')}
-                                </span>
-                              </div>
-                            </div>
-
-                            {/* Mostrar información adicional para cupones de horas */}
-                            {appliedCoupon && appliedCoupon.discountType === 'hours' && (
-                              <div className="mt-3 p-2 bg-green-900/20 border border-green-600/30 rounded text-xs text-green-300">
-                                <i className="fas fa-info-circle mr-1"></i>
-                                Tienes {appliedCoupon.value} hora{appliedCoupon.value > 1 ? 's' : ''} gratis incluida{appliedCoupon.value > 1 ? 's' : ''} en tu sesión
+                              <div className="flex justify-between">
+                                <span className="text-gray-300">Pedal doble</span>
+                                <span className="text-white">₡2,000</span>
                               </div>
                             )}
                           </>
                         ) : (
                           <div className="text-gray-400 text-center py-4">
-                            Ingresa las horas para ver el detalle
+                            Ingresa las horas para calcular
                           </div>
                         )}
                       </div>
+                      
+                      {/* Subtotal */}
+                      {hours && parseFloat(hours) > 0 && (
+                        <>
+                          <div className="border-t border-gray-600 mt-4 pt-3">
+                            <div className="flex justify-between text-sm">
+                              <span className="text-gray-300">Subtotal</span>
+                              <span className="text-white">₡{calculateSubtotal().toLocaleString('es-CR')}</span>
+                            </div>
+                          </div>
+                          
+                          {/* Descuento */}
+                          {discount > 0 && (
+                            <div className="flex justify-between text-sm">
+                              <span className="text-green-400">
+                                Descuento {appliedCoupon ? `(${appliedCoupon.code})` : ''}
+                              </span>
+                              <span className="text-green-400">-₡{discount.toLocaleString('es-CR')}</span>
+                            </div>
+                          )}
+                          
+                          {/* Total */}
+                          <div className="border-t border-gray-600 mt-3 pt-3">
+                            <div className="flex justify-between text-lg font-semibold">
+                              <span className="text-white">Total</span>
+                              <span className="text-white">₡{total.toLocaleString('es-CR')}</span>
+                            </div>
+                          </div>
+                        </>
+                      )}
                     </div>
-                    
-                    {/* Instrucciones de pago */}
+
+                    {/* Instrucciones de pago SINPE */}
                     {total > 0 && (
-                      <div className="bg-purple-900 bg-opacity-50 border border-purple-600 p-4 mb-6">
-                        <h5 className="text-white font-medium mb-2 text-sm">Pago vía SINPE</h5>
-                        <p className="text-purple-200 text-sm">
-                          Deposita <strong>₡{total.toLocaleString('es-CR')}</strong> al número <strong className="text-purple-300">8340-8304</strong>
+                      <div className="bg-purple-900/50 border border-purple-600 p-4 mb-6">
+                        <h5 className="text-white font-medium mb-2 text-center">Pago vía SINPE</h5>
+                        <p className="text-purple-200 text-center">
+                          Deposita <strong className="text-white">₡{total.toLocaleString('es-CR')}</strong> al número{' '}
+                          <strong className="text-purple-300">8340-8304</strong>
                         </p>
                       </div>
                     )}
-                    
-                    {/* Confirmación - Solo desktop */}
+
+                    {/* Confirmación de depósito - Solo en desktop */}
                     {total > 0 && (
                       <div className="hidden lg:block mb-6">
                         <div className="flex items-center bg-gray-800 p-3 border border-gray-600">
@@ -685,13 +721,13 @@ const Ahora = () => {
                         </div>
                       </div>
                     )}
-                    
-                    {/* Botones */}
+
+                    {/* Botones de acción */}
                     <div className="space-y-3">
                       <button
                         onClick={handleProceedToBooking}
                         disabled={!hours || parseFloat(hours) <= 0 || !receiptImage || !depositConfirmed}
-                        className={`w-full py-3 px-4 font-bold transition-all ${
+                        className={`w-full py-4 px-6 font-bold text-lg transition-all ${
                           hours && parseFloat(hours) > 0 && receiptImage && depositConfirmed
                             ? 'bg-gradient-to-r from-cyan-200 to-cyan-300 text-purple-900 hover:from-cyan-300 hover:to-cyan-400 shadow-lg transform hover:scale-105'
                             : 'bg-gray-700 text-gray-400 cursor-not-allowed'
@@ -738,19 +774,6 @@ const Ahora = () => {
                   </button>
                 </div>
               </div>
-            </div>
-          )}
-
-          {/* Botón flotante - SOLO cuando está en "Solo consultar horarios" */}
-          {showPersistentBanner && (
-            <div className="fixed bottom-8 right-8 z-30">
-              <button
-                onClick={handleBackToCalculator}
-                className="bg-gradient-to-r from-purple-600 to-purple-700 text-white px-6 py-3 rounded-full font-bold shadow-lg hover:from-purple-700 hover:to-purple-800 transition-all flex items-center gap-2 animate-pulse"
-              >
-                <i className="fas fa-calculator"></i>
-                Calcular Sesión
-              </button>
             </div>
           )}
         </div>

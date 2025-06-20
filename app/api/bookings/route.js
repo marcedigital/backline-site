@@ -105,10 +105,19 @@ export async function POST(req) {
       // Usar la información del cupón que ya fue validada en el frontend
       const appliedCouponData = bookingData.appliedCoupon;
       
-      // Solo verificar que el cupón sigue existiendo y activo - SIN incrementar uso aún
+      // ✅ CORREGIDO: Buscar con el campo correcto
       const coupon = await Coupon.findOne({ 
         code: bookingData.couponCode.toUpperCase(),
-        isActive: true 
+        active: true  // ✅ Usar 'active' no 'isActive'
+      });
+      
+      console.log('🔍 Búsqueda de cupón result:', {
+        found: !!coupon,
+        code: coupon?.code,
+        active: coupon?.active,
+        usageCount: coupon?.usageCount,
+        couponType: coupon?.couponType,
+        _id: coupon?._id
       });
       
       if (!coupon) {
@@ -119,16 +128,12 @@ export async function POST(req) {
         }, { status: 400 });
       }
       
-      // Verificar límite de usos ANTES de incrementar
-      if (coupon.usageLimit > 0 && coupon.timesUsed >= coupon.usageLimit) {
-        console.log('❌ Cupón agotado. Usos:', coupon.timesUsed, 'Límite:', coupon.usageLimit);
-        return NextResponse.json({
-          success: false,
-          message: 'El cupón ha alcanzado su límite de usos'
-        }, { status: 400 });
-      }
-      
-      console.log('✅ Cupón válido. Usos actuales:', coupon.timesUsed, 'Límite:', coupon.usageLimit || 'Sin límite');
+      console.log('✅ Cupón válido encontrado:', {
+        code: coupon.code,
+        type: coupon.couponType,
+        currentUsage: coupon.usageCount,
+        isActive: coupon.active
+      });
       
       // Agregar información del cupón a la reserva usando los datos ya validados
       newBookingData.couponUsed = {
@@ -150,16 +155,38 @@ export async function POST(req) {
     
     console.log('✅ Reserva guardada exitosamente:', savedBooking._id);
     
-    // SOLO después de guardar exitosamente, incrementar el uso del cupón
+    // ✅ CORREGIDO: Actualizar cupón usando trackUsage
     if (bookingData.couponCode && savedBooking.couponUsed?.couponId) {
       try {
-        await Coupon.findByIdAndUpdate(savedBooking.couponUsed.couponId, {
-          $inc: { timesUsed: 1 }
-        });
-        console.log('✅ Contador de cupón incrementado exitosamente');
+        console.log('🎫 Iniciando actualización de cupón ID:', savedBooking.couponUsed.couponId);
+        
+        const couponToUpdate = await Coupon.findById(savedBooking.couponUsed.couponId);
+        
+        if (!couponToUpdate) {
+          console.error('❌ No se encontró el cupón para actualizar');
+        } else {
+          console.log('📄 Cupón antes de trackUsage:', {
+            code: couponToUpdate.code,
+            usageCount: couponToUpdate.usageCount,
+            active: couponToUpdate.active,
+            couponType: couponToUpdate.couponType
+          });
+          
+          // Llamar al método trackUsage
+          await couponToUpdate.trackUsage();
+          
+          console.log('📄 Cupón después de trackUsage:', {
+            code: couponToUpdate.code,
+            usageCount: couponToUpdate.usageCount,
+            active: couponToUpdate.active,
+            couponType: couponToUpdate.couponType
+          });
+          
+          console.log('✅ Cupón actualizado exitosamente con trackUsage');
+        }
       } catch (couponError) {
-        console.warn('⚠️ Error incrementando contador de cupón:', couponError.message);
-        // No fallar la reserva por esto
+        console.error('⚠️ Error actualizando cupón:', couponError.message);
+        console.error('Stack:', couponError.stack);
       }
     }
     
