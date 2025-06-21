@@ -98,6 +98,11 @@ body {
   }
 }
 
+iframe[src*="booking.easyweek.io"] {
+  width: 100% !important;
+  overflow: hidden !important;
+}
+
 @layer base {
   * {
     @apply border-border;

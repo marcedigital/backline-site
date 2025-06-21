@@ -322,12 +322,6 @@ const Ahora = () => {
                     Las reservas sin comprobante serán eliminadas.
                   </span>
                 </div>
-                <button
-                  onClick={handleBackToCalculator}
-                  className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 text-sm font-medium transition-colors ml-4"
-                >
-                  Calcular sesión
-                </button>
               </div>
             </div>
           )}
@@ -340,10 +334,12 @@ const Ahora = () => {
               style={{
                 border: "0",
                 width: "100%",
-                height: "700px",
+                height: "650px",
                 opacity: showCalculator ? 0.3 : 1,
                 pointerEvents: showCalculator ? 'none' : 'auto',
-                marginTop: showPersistentBanner ? '60px' : '0px',
+                marginTop: showPersistentBanner ? '65px' : '0px',
+                boxSizing: 'border-box',
+                display: 'block'
               }}
               className="transition-opacity duration-300"
             />
@@ -352,7 +348,7 @@ const Ahora = () => {
             {showPersistentBanner && (
               <>
                 {/* Desktop: Botón en esquina inferior derecha del widget */}
-                <div className="hidden md:block absolute bottom-4 right-4 z-20">
+                <div className="hidden lg:block absolute bottom-4 right-8 z-20">
                   <button
                     onClick={handleBackToCalculator}
                     className="bg-gradient-to-r from-purple-600 to-purple-700 text-white px-6 py-4 font-bold shadow-xl hover:from-purple-700 hover:to-purple-800 transition-all flex items-center gap-3 border-2 border-white/20 backdrop-blur-sm"
@@ -367,10 +363,10 @@ const Ahora = () => {
                 </div>
 
                 {/* Mobile: Botón en la parte inferior completa */}
-                <div className="md:hidden absolute bottom-0 left-0 right-0 z-20">
+                <div className="lg:hidden absolute bottom-2 left-0 right-0 z-20">
                   <button
                     onClick={handleBackToCalculator}
-                    className="w-full bg-gradient-to-r from-purple-600 to-purple-700 text-white py-4 px-6 font-bold shadow-xl hover:from-purple-700 hover:to-purple-800 transition-all flex items-center justify-center gap-3 border-t-2 border-white/20 backdrop-blur-sm"
+                    className="w-full bg-gradient-to-r from-purple-600 to-purple-700 text-white py-8 px-6 font-bold shadow-xl hover:from-purple-700 hover:to-purple-800 transition-all flex items-center justify-center gap-3 border-t-2 border-white/20 backdrop-blur-sm"
                     style={{ 
                       borderRadius: '0px',
                       fontSize: '16px'
@@ -461,7 +457,7 @@ const Ahora = () => {
                       <label className="block text-sm font-medium text-gray-300 mb-2">
                         Código de cupón (opcional):
                       </label>
-                      <div className="flex gap-2">
+                      <div className="flex flex-col md:flex-row gap-2">
                         <input
                           type="text"
                           value={coupon}
