@@ -49,7 +49,7 @@ const Regulations = () => {
                     <div className="flex items-center gap-3">
                       <span className="text-yellow-500 font-bold">[01]</span>
                       <p className="">
-                        Deja los cables y micrófonos en su caja.
+                        Dejar los cables y micrófonos en su caja.
                       </p>
                     </div>
                   </div>
@@ -57,31 +57,23 @@ const Regulations = () => {
                   <div className="border border-[#9A9A9A] p-4">
                     <div className="flex items-center gap-3">
                       <span className="text-yellow-500 font-bold">[02]</span>
-                      <p className="">Acomoda los pedestales y equipos.</p>
+                      <p className="">Acomodar los pedestales y equipos.</p>
                     </div>
                   </div>
+
 
                   <div className="border border-[#9A9A9A] p-4">
                     <div className="flex items-center gap-3">
                       <span className="text-yellow-500 font-bold">[03]</span>
-                      <p className="">
-                        Deja los cables y micrófonos en su caja.
-                      </p>
+                      <p className="">No dejar basura dentro de las salas.</p>
                     </div>
                   </div>
 
                   <div className="border border-[#9A9A9A] p-4">
                     <div className="flex items-center gap-3">
                       <span className="text-yellow-500 font-bold">[04]</span>
-                      <p className="">No dejes basura dentro de las salas.</p>
-                    </div>
-                  </div>
-
-                  <div className="border border-[#9A9A9A] p-4">
-                    <div className="flex items-center gap-3">
-                      <span className="text-yellow-500 font-bold">[05]</span>
                       <p className="">
-                        Asegúrate de cerrar la puerta al salir. Presiona el
+                        Asegurarse de cerrar la puerta al salir. Presionar el
                         botón de candado para bloquear.
                       </p>
                     </div>
@@ -89,7 +81,7 @@ const Regulations = () => {
 
                   <div className="border border-[#9A9A9A] p-4">
                     <div className="flex items-center gap-3">
-                      <span className="text-yellow-500 font-bold">[06]</span>
+                      <span className="text-yellow-500 font-bold">[05]</span>
                       <p className="">
                         Si tienes problemas, contacta al guardia en turno o a
                         Andrés Bustamante.

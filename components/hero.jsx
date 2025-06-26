@@ -61,7 +61,7 @@ const Hero = () => {
           ENSAYO 24/7
         </h1>
         <p className="max-w-md text-[14px] md:text-[15px] lg:text-[18px] mb-8">
-          Bienvenido a tu estudio de música donde puedes practicar en un
+          Bienvenido a tu estudio de música, donde podés practicar en un
           ambiente profesional y confortable con el mejor equipamiento.
         </p>
         <a

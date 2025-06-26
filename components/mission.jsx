@@ -9,7 +9,7 @@ const Mission = () => {
             <p className="text-center text-white/80 text-[14px] md:text-[22px] lg:text-[40px] leading-relaxed">
               Nuestro objetivo es{" "}
               <span className="font-bold text-white">romper barreras</span> y
-              ofrecerte un estudio donde puedas enfocarte en lo que realmente
+              ofrecerte un estudio donde podás enfocarte en lo que realmente
               importa:
               <span className="font-bold text-white">
                 {" "}

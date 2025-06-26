@@ -300,8 +300,8 @@ const Ahora = () => {
     <div id="Tarifas" className="border-b text-center border-[#9A9A9A] relative">
       <div className="mx-auto py-3 md:py-5 lg:py-8 border-l border-r border-[#9A9A9A] md:px-10 max-w-[1650px] px-4">
         <section className="relative py-6 px-8 flex justify-center items-center">
-          <h2 className="font-moderniz text-[24px] md:text-[40px] lg:text-[96px] font-[900] tracking-wider">
-            EMPIEZA AHORA
+          <h2 className="font-moderniz text-[23px] md:text-[38px] lg:text-[92px] font-[900] tracking-wider">
+            EMPEZAR AHORA
           </h2>
           <img
             src="/icons/expand.svg"

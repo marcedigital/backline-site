@@ -18,7 +18,7 @@ const Footer = ({ scrollToSection }) => {
             />
             <p className="text-[16px] lg:text-[18px] text-gray-400 leading-relaxed">
               Espacio de ensayo 24/7 con autoservicio y equipamiento
-              profesional. Reserva, accede y crea sin límites.
+              profesional. Reservá, accedé y creá sin límites.
             </p>
           </div>
 
