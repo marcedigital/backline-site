@@ -391,7 +391,7 @@ const Ahora = () => {
                 {/* Header */}
                 <div className="p-6 border-b border-gray-700">
                   <h3 className="text-xl md:text-2xl font-bold text-center text-white">
-                    Calcula tu sesión y aplica tus cupones
+                    Calculá tu sesión y aplicá tus cupones
                   </h3>
                 </div>
 
