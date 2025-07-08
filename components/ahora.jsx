@@ -3,7 +3,10 @@ import React, { useEffect, useState } from "react";
 
 const Ahora = () => {
   const [showCalculator, setShowCalculator] = useState(true);
+  const [showDisclaimer, setShowDisclaimer] = useState(false);
+  const [showPersistentBanner, setShowPersistentBanner] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showContinueButton, setShowContinueButton] = useState(false); // NUEVO
 
   // Calculator state
   const [hours, setHours] = useState('');
@@ -11,23 +14,18 @@ const Ahora = () => {
   const [pedalDoble, setPedalDoble] = useState(false);
   const [coupon, setCoupon] = useState('');
   
-  // Estados de imagen
+  // Estados de imagen - NUEVO: Reemplaza receiptDetail
   const [receiptImage, setReceiptImage] = useState(null);
   const [receiptImagePreview, setReceiptImagePreview] = useState(null);
   const [receiptImageError, setReceiptImageError] = useState('');
   
   const [total, setTotal] = useState(0);
 
-  // Coupon state
+  // Coupon state - ESTADOS ACTUALIZADOS
   const [appliedCoupon, setAppliedCoupon] = useState(null);
   const [couponValidating, setCouponValidating] = useState(false);
   const [couponMessage, setCouponMessage] = useState('');
   const [discount, setDiscount] = useState(0);
-
-  // Estado para el popup de EasyWeek
-  const [showEasyWeekPopup, setShowEasyWeekPopup] = useState(false);
-  const [showEasyWeekDisclaimer, setShowEasyWeekDisclaimer] = useState(false);
-  const [showContinueReservation, setShowContinueReservation] = useState(false);
 
   useEffect(() => {
     const script = document.createElement("script");
@@ -265,38 +263,57 @@ const Ahora = () => {
     }
   };
 
+  const handleConsultOnly = () => {
+    setShowCalculator(false);
+    setShowDisclaimer(true);
+  };
+
+  // FUNCIÓN ACTUALIZADA - Disclaimer con timer
+  const handleDisclaimerAccept = () => {
+    setShowDisclaimer(false);
+    setShowPersistentBanner(true);
+    setShowContinueButton(false);
+    
+    // Mostrar botón "Continuar con el pago" después de 6 segundos
+    setTimeout(() => {
+      setShowContinueButton(true);
+    }, 6000);
+  };
+
+  const handleBackToCalculator = () => {
+    setShowPersistentBanner(false);
+    setShowCalculator(true);
+    setShowContinueButton(false);
+  };
+
   const handleSuccessModalContinue = () => {
     setShowSuccessModal(false);
     setShowCalculator(false);
+    setShowPersistentBanner(false);
   };
 
-  // NUEVA FUNCIÓN - Abrir popup de EasyWeek
+  // Funciones para el popup flotante de EasyWeek
   const openEasyWeekPopup = () => {
     setShowEasyWeekPopup(true);
     setShowEasyWeekDisclaimer(true);
     setShowContinueReservation(false);
   };
 
-  // NUEVA FUNCIÓN - Cerrar popup de EasyWeek
   const closeEasyWeekPopup = () => {
     setShowEasyWeekPopup(false);
     setShowEasyWeekDisclaimer(false);
     setShowContinueReservation(false);
   };
 
-  // NUEVA FUNCIÓN - Aceptar disclaimer de EasyWeek
   const handleEasyWeekDisclaimerAccept = () => {
     setShowEasyWeekDisclaimer(false);
-    // Mostrar botón de continuar después de 6 segundos
     setTimeout(() => {
       setShowContinueReservation(true);
     }, 6000);
   };
 
-  // NUEVA FUNCIÓN - Continuar con reserva
   const handleContinueReservation = () => {
     closeEasyWeekPopup();
-    // Mostrar la calculadora
     setShowCalculator(true);
   };
 
@@ -331,117 +348,81 @@ const Ahora = () => {
         </section>
 
         <div className="mt-8 w-full flex justify-center relative">
-          {/* Botón flotante redondo de EasyWeek - Altura WhatsApp */}
-          <div className="fixed left-6 bottom-6 z-50 group">
-            <button
-              onClick={openEasyWeekPopup}
-              className="w-14 h-14 bg-[#56af40] hover:bg-[#4a9538] text-[#D3D3D4] shadow-2xl transition-all flex items-center justify-center rounded-full hover:scale-110"
-              style={{
-                backgroundColor: '#56af40',
-                color: '#D3D3D4',
-                boxShadow: '0 4px 20px rgba(86, 175, 64, 0.3)',
-              }}
-            >
-              <i className="fas fa-calendar-alt text-xl"></i>
-              <div className="absolute inset-0 rounded-full bg-green-400 animate-ping opacity-45" style={{animationDuration: '4s'}}></div>
-            </button>
-            
-            {/* Tooltip en hover - solo desktop */}
-            <div className="absolute left-16 top-1/2 transform -translate-y-1/2 bg-[#292A2E] text-[#D3D3D4] px-3 py-2 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none hidden md:block z-10">
-              <span className="text-sm font-medium">Consulta horarios disponibles</span>
-              {/* Flecha del tooltip */}
-              <div className="absolute left-0 top-1/2 transform -translate-y-1/2 -translate-x-full">
-                <div className="w-0 h-0 border-t-4 border-b-4 border-r-4 border-transparent border-r-[#292A2E]"></div>
-              </div>
-            </div>
-          </div>
-
-          {/* Popup de EasyWeek con animación desde el botón */}
-          {showEasyWeekPopup && (
-            <div className="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm flex items-center justify-start z-50">
-              <div 
-                className={`bg-white h-full w-full md:w-1/2 relative shadow-2xl transform transition-all duration-300 ease-out ${
-                  showEasyWeekPopup ? 'translate-x-0' : '-translate-x-full'
-                }`}
-                style={{
-                  transformOrigin: 'left center'
-                }}
-              >
-                {/* Botón cerrar on-brand */}
-                <button
-                  onClick={closeEasyWeekPopup}
-                  className="absolute top-6 right-6 z-20 bg-[#292A2E] hover:bg-black text-[#D3D3D4] w-10 h-10 flex items-center justify-center font-bold text-xl transition-all duration-200 border border-[#9A9A9A] hover:border-white"
-                  style={{ borderRadius: '0px' }}
-                >
-                  ×
-                </button>
-                
-                {/* iframe de EasyWeek */}
-                <iframe
-                  src="https://booking.easyweek.io/backline-studios"
-                  className="w-full h-full border-0"
-                  title="Consulta de horarios disponibles"
-                />
-
-                {/* Disclaimer Popup para EasyWeek */}
-                {showEasyWeekDisclaimer && (
-                  <div className="absolute inset-0 bg-black bg-opacity-85 backdrop-blur-sm flex items-center justify-center z-30">
-                    <div className="bg-black/70 backdrop-blur-sm border-[0.5px] border-white/70 p-8 max-w-md w-full mx-4 shadow-2xl">
-                      <div className="text-center">
-                        <div className="mb-6">
-                          <div className="mx-auto w-16 h-16 bg-blue-500 bg-opacity-20 flex items-center justify-center mb-4">
-                            <span className="text-3xl">📅</span>
-                          </div>
-                          <h3 className="text-xl font-bold text-white mb-4">
-                            Consulta de Horarios
-                          </h3>
-                          <p className="text-gray-300 leading-relaxed">
-                            Esta ventana es para que puedas <strong className="text-white">consultar los horarios disponibles solamente</strong>. Una vez sepas la cantidad de horas que necesitas, ve al proceso de reserva en la página principal.
-                          </p>
-                        </div>
-                        
-                        <button
-                          onClick={handleEasyWeekDisclaimerAccept}
-                          className="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white py-3 px-6 font-semibold hover:from-blue-700 hover:to-blue-800 transition-all"
-                        >
-                          Entendido
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Botón de continuar con reserva */}
-                {showContinueReservation && (
-                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 to-transparent p-6 z-20">
-                    <button
-                      onClick={handleContinueReservation}
-                      className="w-full bg-gradient-to-r from-cyan-200 to-cyan-300 text-purple-900 py-4 px-6 font-bold text-lg hover:from-cyan-300 hover:to-cyan-400 shadow-lg transform hover:scale-105 transition-all"
-                    >
-                      Continuar con la reserva
-                    </button>
-                  </div>
-                )}
+          {/* Banner persistente */}
+          {showPersistentBanner && (
+            <div className="absolute top-0 left-0 right-0 z-10 bg-yellow-600 border-b-2 border-yellow-500 px-4 py-3">
+              <div className="flex items-center justify-between max-w-[1800px] mx-auto">
+                <div className="flex items-center text-black">
+                  <span className="mr-2">💡</span>
+                  <span className="font-medium text-sm">
+                    <strong>Importante:</strong> Las reservas se confirman únicamente con depósito previo.
+                    Las reservas sin comprobante serán eliminadas.
+                  </span>
+                </div>
               </div>
             </div>
           )}
 
-          {/* Container del widget con iframe */}
+          {/* Container del widget con botón integrado */}
           <div className="relative w-full max-w-[1800px]">
-            {/* EasyWeek Widget - iframe original */}
-            <iframe
-              src="https://booking.easyweek.io/backline-studios"
+            {/* EasyWeek Widget - ANCHO LIMITADO A 750px EN MODO CONSULTA */}
+            <div 
+              className="mx-auto"
               style={{
-                border: "0",
-                width: "100%",
-                height: "650px",
-                opacity: showCalculator ? 0.3 : 1,
-                pointerEvents: showCalculator ? 'none' : 'auto',
-                boxSizing: 'border-box',
-                display: 'block'
+                maxWidth: showPersistentBanner ? '750px' : '100%',
+                transition: 'max-width 0.3s ease'
               }}
-              className="transition-opacity duration-300"
-            />
+            >
+              <iframe
+                src="https://booking.easyweek.io/backline-studios"
+                style={{
+                  border: "0",
+                  width: "100%",
+                  height: "650px",
+                  opacity: showCalculator ? 0.3 : 1,
+                  pointerEvents: showCalculator ? 'none' : 'auto',
+                  marginTop: showPersistentBanner ? '65px' : '0px',
+                  boxSizing: 'border-box',
+                  display: 'block'
+                }}
+                className="transition-opacity duration-300"
+              />
+            </div>
+            
+            {/* Botón integrado - ANCHO COMPLETO DEL WIDGET CON MAX-WIDTH */}
+            {showPersistentBanner && showContinueButton && (
+              <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 z-20 w-full" style={{ maxWidth: '750px' }}>
+                <button
+                  onClick={handleBackToCalculator}
+                  className="w-full bg-gradient-to-r from-purple-600 to-purple-700 text-white py-6 px-6 font-bold text-lg shadow-xl hover:from-purple-700 hover:to-purple-800 transition-all duration-300 flex items-center justify-center gap-3 animate-fade-in-up"
+                  style={{ 
+                    borderRadius: '0px',
+                    animation: 'fadeInUp 0.5s ease-out'
+                  }}
+                >
+                  <i className="fas fa-credit-card text-lg"></i>
+                  <span>Continuar con el pago</span>
+                </button>
+                
+                {/* Keyframes CSS para la animación */}
+                <style jsx>{`
+                  @keyframes fadeInUp {
+                    from {
+                      opacity: 0;
+                      transform: translateY(20px);
+                    }
+                    to {
+                      opacity: 1;
+                      transform: translateY(0);
+                    }
+                  }
+                  
+                  .animate-fade-in-up {
+                    animation: fadeInUp 0.5s ease-out;
+                  }
+                `}</style>
+              </div>
+            )}
           </div>
 
           {/* Calculator Overlay */}
@@ -479,7 +460,7 @@ const Ahora = () => {
                         </div>
                         <div className="flex items-center space-x-3">
                           <div className="flex-shrink-0 w-6 h-6 border-2 border-green-500 bg-transparent text-green-500 flex items-center justify-center font-bold text-xs rounded-full">3</div>
-                          <span className="text-gray-300">Selecciona sala y horarios</span>
+                          <span className="text-gray-300">Selecciona tu horario</span>
                         </div>
                         <div className="flex items-center space-x-3">
                           <div className="flex-shrink-0 w-6 h-6 border-2 border-green-500 bg-transparent text-green-500 flex items-center justify-center font-bold text-xs rounded-full">4</div>
@@ -488,14 +469,14 @@ const Ahora = () => {
                       </div>
                     </div>
 
-                    {/* Botón "Consultar horarios disponibles" - AHORA ABRE POPUP */}
+                    {/* Botón "Solo consultar horarios" */}
                     <div className="mb-6">
                       <button
-                        onClick={openEasyWeekPopup}
+                        onClick={handleConsultOnly}
                         className="w-full py-3 px-4 bg-green-500 hover:bg-green-600 text-white font-medium transition-colors flex items-center justify-center gap-2"
                       >
                         <i className="fas fa-calendar-alt text-sm"></i>
-                        Consultar horarios disponibles
+                        Solo consultar horarios
                       </button>
                     </div>
 
@@ -810,6 +791,34 @@ const Ahora = () => {
                     className="w-full bg-gradient-to-r from-green-500 to-green-600 text-white py-4 px-6 font-bold text-lg hover:from-green-600 hover:to-green-700 transition-all shadow-lg transform hover:scale-105"
                   >
                     Continuar al calendario
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Disclaimer Popup - MENSAJE ACTUALIZADO */}
+          {showDisclaimer && (
+            <div className="absolute inset-0 bg-black bg-opacity-85 backdrop-blur-sm flex items-center justify-center z-20">
+              <div className="bg-black/70 backdrop-blur-sm border-[0.5px] border-white/70 p-8 max-w-md w-full mx-4 shadow-2xl">
+                <div className="text-center">
+                  <div className="mb-6">
+                    <div className="mx-auto w-16 h-16 bg-blue-500 bg-opacity-20 flex items-center justify-center mb-4">
+                      <span className="text-3xl">📅</span>
+                    </div>
+                    <h3 className="text-xl font-bold text-white mb-4">
+                      Consulta de Horarios
+                    </h3>
+                    <p className="text-gray-300 leading-relaxed">
+                      Esta ventana es para que puedas <strong className="text-white">consultar los horarios disponibles solamente</strong>. Una vez sepas la cantidad de horas que necesitas, ve al proceso de reserva en la página principal.
+                    </p>
+                  </div>
+                  
+                  <button
+                    onClick={handleDisclaimerAccept}
+                    className="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white py-3 px-6 font-semibold hover:from-blue-700 hover:to-blue-800 transition-all"
+                  >
+                    Entendido
                   </button>
                 </div>
               </div>
