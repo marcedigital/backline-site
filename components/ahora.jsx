@@ -17,7 +17,6 @@ const Ahora = () => {
   const [receiptImagePreview, setReceiptImagePreview] = useState(null);
   const [receiptImageError, setReceiptImageError] = useState('');
   
-  const [depositConfirmed, setDepositConfirmed] = useState(false);
   const [total, setTotal] = useState(0);
 
   // Coupon state - ESTADOS ACTUALIZADOS
@@ -207,7 +206,7 @@ const Ahora = () => {
   }, [hours, platillos, pedalDoble, appliedCoupon]);
 
   const handleProceedToBooking = async () => {
-    if (hours && parseFloat(hours) > 0 && receiptImage && depositConfirmed) {
+    if (hours && parseFloat(hours) > 0 && receiptImage) {
       try {
         console.log('📝 Creando reserva...');
         
@@ -358,7 +357,7 @@ const Ahora = () => {
                     }}
                   >
                     <i className="fas fa-calculator text-lg"></i>
-                    <span className="text-base">Calcular Sesión</span>
+                    <span className="text-base">Continuar</span>
                   </button>
                 </div>
 
@@ -373,14 +372,14 @@ const Ahora = () => {
                     }}
                   >
                     <i className="fas fa-calculator text-lg"></i>
-                    <span>Calcular Sesión</span>
+                    <span>Continuar</span>
                   </button>
                 </div>
               </>
             )}
           </div>
 
-          {/* Calculator Overlay - RESTAURADO AL ORIGINAL */}
+          {/* Calculator Overlay - ACTUALIZADO CON CAMBIOS */}
           {showCalculator && (
             <div className="absolute inset-0 bg-black/15 flex items-center justify-center z-10 p-4">
               <div className="bg-black/70 backdrop-blur-sm border-[0.5px] border-white/70 shadow-2xl w-full max-w-6xl max-h-[90vh] overflow-y-auto">
@@ -401,6 +400,17 @@ const Ahora = () => {
                   {/* Columna izquierda: Inputs y configuración */}
                   <div className="flex-1 p-6 lg:border-r border-gray-700">
                     
+                    {/* CAMBIO 3: Botón "Solo consultar horarios" movido al inicio y cambiado a verde */}
+                    <div className="mb-6">
+                      <button
+                        onClick={handleConsultOnly}
+                        className="w-full py-3 px-4 bg-green-500 hover:bg-green-600 text-white font-medium transition-colors flex items-center justify-center gap-2"
+                      >
+                        <i className="fas fa-calendar-alt text-sm"></i>
+                        Solo consultar horarios
+                      </button>
+                    </div>
+
                     {/* Cantidad de horas */}
                     <div className="mb-6">
                       <label className="block text-sm font-medium text-gray-300 mb-2">
@@ -513,96 +523,7 @@ const Ahora = () => {
                       )}
                     </div>
 
-                    {/* NUEVA SECCIÓN: Upload de imagen del comprobante */}
-                    <div className="mb-4">
-                      <label className="block text-sm font-medium text-gray-300 mb-2">
-                        Carga tu comprobante: <span className="text-red-500">*</span>
-                      </label>
-                      
-                      {/* Input de archivo */}
-                      <div className="mb-3">
-                        <input
-                          id="receipt-image-input"
-                          type="file"
-                          accept="image/jpeg,image/jpg,image/png,image/webp"
-                          onChange={handleImageUpload}
-                          className="w-full px-3 py-2 bg-gray-800 border border-gray-600 text-white focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent file:mr-4 file:py-1 file:px-3 file:border-0 file:text-sm file:font-medium file:bg-purple-600 file:text-white hover:file:bg-purple-700"
-                          required
-                        />
-                        <p className="text-xs text-gray-400 mt-1">
-                          Formatos: JPG, PNG, WebP (máx. 5MB)
-                        </p>
-                      </div>
-
-                      {/* Error de imagen */}
-                      {receiptImageError && (
-                        <p className="text-red-400 text-xs mb-2">
-                          {receiptImageError}
-                        </p>
-                      )}
-
-                      {/* Preview de imagen */}
-                      {receiptImagePreview && (
-                        <div className="relative bg-gray-800 border border-gray-600 p-3 mb-3">
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="text-green-400 text-xs font-medium">
-                              ✅ Comprobante cargado
-                            </span>
-                            <button
-                              onClick={removeImage}
-                              className="text-red-400 hover:text-red-300 text-sm"
-                            >
-                              Eliminar
-                            </button>
-                          </div>
-                          <div className="relative max-h-32 overflow-hidden border border-gray-600">
-                            <img
-                              src={receiptImagePreview}
-                              alt="Preview del comprobante"
-                              className="w-full h-auto object-contain"
-                            />
-                          </div>
-                          {receiptImage && (
-                            <p className="text-xs text-gray-400 mt-1">
-                              {receiptImage.name} ({(receiptImage.size / 1024).toFixed(1)} KB)
-                            </p>
-                          )}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Botón de WhatsApp */}
-                    {total > 0 && (
-                      <div className="mb-6">
-                        <a
-                          href="https://wa.me/50683408304?text=Hola%21%20Este%20es%20el%20comprobante%20de%20pago%20para%20mi%20sesi%C3%B3n%20de%20ensayo"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="w-full bg-green-500 hover:bg-green-600 text-white py-3 px-4 font-bold transition-all flex items-center justify-center gap-2"
-                        >
-                          <i className="fab fa-whatsapp text-lg"></i>
-                          Enviar por WhatsApp
-                        </a>
-                      </div>
-                    )}
-
-                    {/* Confirmación de depósito - Solo en mobile */}
-                    {total > 0 && (
-                      <div className="lg:hidden mb-6">
-                        <div className="flex items-center bg-gray-800 p-3 border border-gray-600">
-                          <input
-                            type="checkbox"
-                            id="depositConfirmed-mobile"
-                            checked={depositConfirmed}
-                            onChange={(e) => setDepositConfirmed(e.target.checked)}
-                            className="h-4 w-4 text-purple-600 bg-gray-700 border-gray-600 focus:ring-purple-600"
-                          />
-                          <label htmlFor="depositConfirmed-mobile" className="ml-3 text-white text-sm">
-                            Ya realicé el depósito
-                          </label>
-                        </div>
-                      </div>
-                    )}
+                    {/* CAMBIO 4: Botón de WhatsApp eliminado completamente */}
                   </div>
                   
                   {/* Columna derecha: Factura y acciones */}
@@ -700,43 +621,76 @@ const Ahora = () => {
                       </div>
                     )}
 
-                    {/* Confirmación de depósito - Solo en desktop */}
-                    {total > 0 && (
-                      <div className="hidden lg:block mb-6">
-                        <div className="flex items-center bg-gray-800 p-3 border border-gray-600">
-                          <input
-                            type="checkbox"
-                            id="depositConfirmed-desktop"
-                            checked={depositConfirmed}
-                            onChange={(e) => setDepositConfirmed(e.target.checked)}
-                            className="h-4 w-4 text-purple-600 bg-gray-700 border-gray-600 focus:ring-purple-600"
-                          />
-                          <label htmlFor="depositConfirmed-desktop" className="ml-3 text-white text-sm">
-                            Ya realicé el depósito
-                          </label>
-                        </div>
+                    {/* CAMPO MOVIDO: Carga de comprobante justo arriba del botón */}
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                        Carga tu comprobante: <span className="text-red-500">*</span>
+                      </label>
+                      
+                      {/* Input de archivo */}
+                      <div className="mb-3">
+                        <input
+                          id="receipt-image-input"
+                          type="file"
+                          accept="image/jpeg,image/jpg,image/png,image/webp"
+                          onChange={handleImageUpload}
+                          className="w-full px-3 py-2 bg-gray-800 border border-gray-600 text-white focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent file:mr-4 file:py-1 file:px-3 file:border-0 file:text-sm file:font-medium file:bg-purple-600 file:text-white hover:file:bg-purple-700"
+                          required
+                        />
+                        <p className="text-xs text-gray-400 mt-1">
+                          Formatos: JPG, PNG, WebP (máx. 5MB)
+                        </p>
                       </div>
-                    )}
+
+                      {/* Error de imagen */}
+                      {receiptImageError && (
+                        <p className="text-red-400 text-xs mb-2">
+                          {receiptImageError}
+                        </p>
+                      )}
+
+                      {/* Preview de imagen */}
+                      {receiptImagePreview && (
+                        <div className="relative bg-gray-800 border border-gray-600 p-3 mb-3">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-green-400 text-xs font-medium">
+                              ✅ Comprobante cargado
+                            </span>
+                            <button
+                              onClick={removeImage}
+                              className="text-red-400 hover:text-red-300 text-sm"
+                            >
+                              Eliminar
+                            </button>
+                          </div>
+                          <div className="relative max-h-32 overflow-hidden border border-gray-600">
+                            <img
+                              src={receiptImagePreview}
+                              alt="Preview del comprobante"
+                              className="w-full h-auto object-contain"
+                            />
+                          </div>
+                          {receiptImage && (
+                            <p className="text-xs text-gray-400 mt-1">
+                              {receiptImage.name} ({(receiptImage.size / 1024).toFixed(1)} KB)
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </div>
 
                     {/* Botones de acción */}
                     <div className="space-y-3">
                       <button
                         onClick={handleProceedToBooking}
-                        disabled={!hours || parseFloat(hours) <= 0 || !receiptImage || !depositConfirmed}
+                        disabled={!hours || parseFloat(hours) <= 0 || !receiptImage}
                         className={`w-full py-4 px-6 font-bold text-lg transition-all ${
-                          hours && parseFloat(hours) > 0 && receiptImage && depositConfirmed
+                          hours && parseFloat(hours) > 0 && receiptImage
                             ? 'bg-gradient-to-r from-cyan-200 to-cyan-300 text-purple-900 hover:from-cyan-300 hover:to-cyan-400 shadow-lg transform hover:scale-105'
                             : 'bg-gray-700 text-gray-400 cursor-not-allowed'
                         }`}
                       >
                         Continuar con la reserva
-                      </button>
-                      
-                      <button
-                        onClick={handleConsultOnly}
-                        className="w-full py-2 text-purple-300 hover:text-purple-200 text-sm transition-colors border-2 border-purple-600 hover:border-purple-400 hover:bg-purple-900 hover:bg-opacity-20"
-                      >
-                        Solo consultar horarios
                       </button>
                     </div>
                   </div>
