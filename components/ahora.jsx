@@ -378,7 +378,7 @@ const Ahora = () => {
                 style={{
                   border: "0",
                   width: "100%",
-                  height: "650px",
+                  height: "750px",
                   opacity: showCalculator ? 0.3 : 1,
                   pointerEvents: showCalculator ? 'none' : 'auto',
                   marginTop: showPersistentBanner ? '65px' : '0px',
