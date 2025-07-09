@@ -451,19 +451,19 @@ const Ahora = () => {
                       <h4 className="text-white font-medium mb-3 text-center text-sm">Proceso de reserva</h4>
                       <div className="space-y-3 text-xs">
                         <div className="flex items-center space-x-3">
-                          <div className="flex-shrink-0 w-6 h-6 border-2 border-green-500 bg-transparent text-green-500 flex items-center justify-center font-bold text-xs rounded-full">1</div>
+                          <div className="flex-shrink-0 w-6 h-6 border-2 border-green-500 bg-transparent text-green-500 flex items-center justify-start font-bold text-xs rounded-full">1</div>
                           <span className="text-gray-300">Consulta horarios disponibles</span>
                         </div>
                         <div className="flex items-center space-x-3">
-                          <div className="flex-shrink-0 w-6 h-6 border-2 border-green-500 bg-transparent text-green-500 flex items-center justify-center font-bold text-xs rounded-full">2</div>
+                          <div className="flex-shrink-0 w-6 h-6 border-2 border-green-500 bg-transparent text-green-500 flex items-center justify-start font-bold text-xs rounded-full">2</div>
                           <span className="text-gray-300">Calcula costo y envía comprobante</span>
                         </div>
                         <div className="flex items-center space-x-3">
-                          <div className="flex-shrink-0 w-6 h-6 border-2 border-green-500 bg-transparent text-green-500 flex items-center justify-center font-bold text-xs rounded-full">3</div>
+                          <div className="flex-shrink-0 w-6 h-6 border-2 border-green-500 bg-transparent text-green-500 flex items-center justify-start font-bold text-xs rounded-full">3</div>
                           <span className="text-gray-300">Selecciona tu horario</span>
                         </div>
                         <div className="flex items-center space-x-3">
-                          <div className="flex-shrink-0 w-6 h-6 border-2 border-green-500 bg-transparent text-green-500 flex items-center justify-center font-bold text-xs rounded-full">4</div>
+                          <div className="flex-shrink-0 w-6 h-6 border-2 border-green-500 bg-transparent text-green-500 flex items-center justify-start font-bold text-xs rounded-full">4</div>
                           <span className="text-gray-300">Llena formulario y reserva</span>
                         </div>
                       </div>

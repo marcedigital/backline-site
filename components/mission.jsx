@@ -15,7 +15,7 @@ const Mission = () => {
                 {" "}
                 hacer música sin preocupaciones
               </span>
-              . Tú traes el talento, nosotros el espacio perfecto para que
+              . Vos traés el talento, nosotros el espacio perfecto para que
               <span className="font-bold text-white">
                 {" "}
                 tu sonido cobre vida
