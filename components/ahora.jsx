@@ -277,7 +277,7 @@ const Ahora = () => {
     // Mostrar botón "Continuar con el pago" después de 6 segundos
     setTimeout(() => {
       setShowContinueButton(true);
-    }, 6000);
+    }, 10000);
   };
 
   const handleBackToCalculator = () => {
@@ -378,7 +378,7 @@ const Ahora = () => {
                 style={{
                   border: "0",
                   width: "100%",
-                  height: "750px",
+                  height: "680px",
                   opacity: showCalculator ? 0.3 : 1,
                   pointerEvents: showCalculator ? 'none' : 'auto',
                   marginTop: showPersistentBanner ? '65px' : '0px',
@@ -452,19 +452,19 @@ const Ahora = () => {
                       <div className="space-y-3 text-xs">
                         <div className="flex items-center space-x-3">
                           <div className="flex-shrink-0 w-6 h-6 border-2 border-green-500 bg-transparent text-green-500 flex items-center justify-center font-bold text-xs rounded-full">1</div>
-                          <span className="text-gray-300">Consultá horarios disponibles</span>
+                          <span className="text-gray-300 text-start">Consultá horarios disponibles</span>
                         </div>
                         <div className="flex items-center space-x-3">
                           <div className="flex-shrink-0 w-6 h-6 border-2 border-green-500 bg-transparent text-green-500 flex items-center justify-center font-bold text-xs rounded-full">2</div>
-                          <span className="text-gray-300">Calculá costos y envía comprobante</span>
+                          <span className="text-gray-300 text-start">Calculá costos y envía comprobante</span>
                         </div>
                         <div className="flex items-center space-x-3">
                           <div className="flex-shrink-0 w-6 h-6 border-2 border-green-500 bg-transparent text-green-500 flex items-center justify-center font-bold text-xs rounded-full">3</div>
-                          <span className="text-gray-300">Seleccioná tu horario</span>
+                          <span className="text-gray-300 text-start">Seleccioná tu horario</span>
                         </div>
                         <div className="flex items-center space-x-3">
                           <div className="flex-shrink-0 w-6 h-6 border-2 border-green-500 bg-transparent text-green-500 flex items-center justify-center font-bold text-xs rounded-full">4</div>
-                          <span className="text-gray-300">Llená el formulario y reservá!</span>
+                          <span className="text-gray-300 text-start">Llená el formulario y reservá!</span>
                         </div>
                       </div>
                     </div>
@@ -810,7 +810,7 @@ const Ahora = () => {
                       Consulta de Horarios
                     </h3>
                     <p className="text-gray-300 leading-relaxed">
-                      Esta ventana es para que podás <strong className="text-white">consultar los horarios disponibles solamente</strong>. Una vez sepás la cantidad de horas que necesitás, ve al proceso de reserva en la página principal.
+                      Esta ventana es para que podás <strong className="text-white">consultar los horarios disponibles solamente</strong>. Una vez sepás la cantidad de horas que necesitás, iniciá al proceso de reserva en la página principal.
                     </p>
                   </div>
                   
