@@ -266,6 +266,14 @@ const Ahora = () => {
   const handleConsultOnly = () => {
     setShowCalculator(false);
     setShowDisclaimer(true);
+    
+    // Scroll to the Easy div
+    setTimeout(() => {
+      const easyElement = document.getElementById('Easy');
+      if (easyElement) {
+        easyElement.scrollIntoView({ behavior: 'smooth' });
+      }
+    }, 100); // Small delay to ensure state updates are processed
   };
 
   // FUNCIÓN ACTUALIZADA - Disclaimer con timer
@@ -367,6 +375,7 @@ const Ahora = () => {
           <div className="relative w-full max-w-[1800px]">
             {/* EasyWeek Widget - ANCHO LIMITADO A 750px EN MODO CONSULTA */}
             <div 
+              id="Easy"
               className="mx-auto"
               style={{
                 maxWidth: showPersistentBanner ? '750px' : '100%',
@@ -394,7 +403,7 @@ const Ahora = () => {
               <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 z-20 w-full" style={{ maxWidth: '750px' }}>
                 <button
                   onClick={handleBackToCalculator}
-                  className="w-full bg-gradient-to-r from-purple-600 to-purple-700 text-white py-6 px-6 font-bold text-lg shadow-xl hover:from-purple-700 hover:to-purple-800 transition-all duration-300 flex items-center justify-center gap-3 animate-fade-in-up"
+                  className="w-full bg-gradient-to-r from-purple-600 to-purple-700 text-white py-10 px-6 font-bold text-lg shadow-xl hover:from-purple-700 hover:to-purple-800 transition-all duration-300 flex items-center justify-center gap-3 animate-fade-in-up"
                   style={{ 
                     borderRadius: '0px',
                     animation: 'fadeInUp 0.5s ease-out'
