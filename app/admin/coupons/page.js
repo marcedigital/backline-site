@@ -138,7 +138,7 @@ export default function AdminCoupons() {
   };
 
   const deleteCoupon = async (id) => {
-    if (!confirm('¿Estás seguro de que quieres eliminar este cupón?')) return;
+    if (!confirm('¿Estás seguro de que querés eliminar este cupón?')) return;
 
     try {
       const token = localStorage.getItem('adminToken');

@@ -160,7 +160,7 @@ const Ahora = () => {
     // Validar tipo de archivo
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
     if (!allowedTypes.includes(file.type)) {
-      setReceiptImageError('Por favor selecciona una imagen válida (JPG, PNG o WebP)');
+      setReceiptImageError('Por favor seleccioná una imagen válida (JPG, PNG o WebP)');
       return;
     }
 
@@ -451,20 +451,20 @@ const Ahora = () => {
                       <h4 className="text-white font-medium mb-3 text-center text-sm">Proceso de reserva</h4>
                       <div className="space-y-3 text-xs">
                         <div className="flex items-center space-x-3">
-                          <div className="flex-shrink-0 w-6 h-6 border-2 border-green-500 bg-transparent text-green-500 flex items-center justify-start font-bold text-xs rounded-full">1</div>
-                          <span className="text-gray-300">Consulta horarios disponibles</span>
+                          <div className="flex-shrink-0 w-6 h-6 border-2 border-green-500 bg-transparent text-green-500 flex items-center justify-center font-bold text-xs rounded-full">1</div>
+                          <span className="text-gray-300">Consultá horarios disponibles</span>
                         </div>
                         <div className="flex items-center space-x-3">
-                          <div className="flex-shrink-0 w-6 h-6 border-2 border-green-500 bg-transparent text-green-500 flex items-center justify-start font-bold text-xs rounded-full">2</div>
-                          <span className="text-gray-300">Calcula costo y envía comprobante</span>
+                          <div className="flex-shrink-0 w-6 h-6 border-2 border-green-500 bg-transparent text-green-500 flex items-center justify-center font-bold text-xs rounded-full">2</div>
+                          <span className="text-gray-300">Calculá costos y envía comprobante</span>
                         </div>
                         <div className="flex items-center space-x-3">
-                          <div className="flex-shrink-0 w-6 h-6 border-2 border-green-500 bg-transparent text-green-500 flex items-center justify-start font-bold text-xs rounded-full">3</div>
-                          <span className="text-gray-300">Selecciona tu horario</span>
+                          <div className="flex-shrink-0 w-6 h-6 border-2 border-green-500 bg-transparent text-green-500 flex items-center justify-center font-bold text-xs rounded-full">3</div>
+                          <span className="text-gray-300">Seleccioná tu horario</span>
                         </div>
                         <div className="flex items-center space-x-3">
-                          <div className="flex-shrink-0 w-6 h-6 border-2 border-green-500 bg-transparent text-green-500 flex items-center justify-start font-bold text-xs rounded-full">4</div>
-                          <span className="text-gray-300">Llena formulario y reserva</span>
+                          <div className="flex-shrink-0 w-6 h-6 border-2 border-green-500 bg-transparent text-green-500 flex items-center justify-center font-bold text-xs rounded-full">4</div>
+                          <span className="text-gray-300">Llená el formulario y reservá!</span>
                         </div>
                       </div>
                     </div>
@@ -779,10 +779,10 @@ const Ahora = () => {
                       ¡Gracias por completar el pago!
                     </h3>
                     <p className="text-gray-300 leading-relaxed mb-4">
-                      Ahora puedes <strong className="text-white">continuar con el proceso de reserva</strong>.
+                      Ahora podés <strong className="text-white">continuar con el proceso de reserva</strong>.
                     </p>
                     <p className="text-gray-300 leading-relaxed">
-                      Selecciona la sala y el horario que te convengan según la cantidad de horas que adquiriste y completa el formulario final para reservar tu espacio.
+                      Seleccioná la sala y el horario que te convengan según la cantidad de horas que adquiriste y completá el formulario final para reservar tu espacio.
                     </p>
                   </div>
                   
@@ -810,7 +810,7 @@ const Ahora = () => {
                       Consulta de Horarios
                     </h3>
                     <p className="text-gray-300 leading-relaxed">
-                      Esta ventana es para que puedas <strong className="text-white">consultar los horarios disponibles solamente</strong>. Una vez sepas la cantidad de horas que necesitas, ve al proceso de reserva en la página principal.
+                      Esta ventana es para que podás <strong className="text-white">consultar los horarios disponibles solamente</strong>. Una vez sepás la cantidad de horas que necesitás, ve al proceso de reserva en la página principal.
                     </p>
                   </div>
                   

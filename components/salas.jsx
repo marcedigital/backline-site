@@ -15,7 +15,7 @@ const Salas = () => {
             <p className="text-[12px] md:text-[15px] lg:text-[18px] mb-6 leading-relaxed">
               Contamos con dos salas de ensayo totalmente equipadas, pensadas
               para brindarte la mejor calidad de sonido y comodidad. Cada
-              espacio ha sido diseñado para que puedas concentrarte únicamente
+              espacio ha sido diseñado para que podás concentrarte únicamente
               en tu música, sin distracciones ni complicaciones.
             </p>
             <h3 className="font-moderniz text-[20px] lg:text-[24px] font-[900] mb-3 xl:mb-6">
