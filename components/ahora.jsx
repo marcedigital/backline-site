@@ -7,6 +7,7 @@ const Ahora = () => {
   const [showPersistentBanner, setShowPersistentBanner] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showContinueButton, setShowContinueButton] = useState(false); // NUEVO
+  const [isSubmitting, setIsSubmitting] = useState(false); // Estado para prevenir múltiples envíos
 
   // Calculator state
   const [hours, setHours] = useState('');
@@ -208,7 +209,9 @@ const Ahora = () => {
   }, [hours, platillos, pedalDoble, appliedCoupon]);
 
   const handleProceedToBooking = async () => {
-    if (hours && parseFloat(hours) > 0 && receiptImage) {
+    if (hours && parseFloat(hours) > 0 && receiptImage && !isSubmitting) {
+      setIsSubmitting(true);
+      
       try {
         console.log('📝 Creando reserva...');
         
@@ -259,6 +262,8 @@ const Ahora = () => {
       } catch (error) {
         console.error('❌ Error de red:', error);
         alert('Error de conexión. Por favor intenta nuevamente.');
+      } finally {
+        setIsSubmitting(false);
       }
     }
   };
@@ -759,14 +764,14 @@ const Ahora = () => {
                     <div className="space-y-3">
                       <button
                         onClick={handleProceedToBooking}
-                        disabled={!hours || parseFloat(hours) <= 0 || !receiptImage}
+                        disabled={!hours || parseFloat(hours) <= 0 || !receiptImage || isSubmitting}
                         className={`w-full py-4 px-6 font-bold text-lg transition-all ${
-                          hours && parseFloat(hours) > 0 && receiptImage
+                          hours && parseFloat(hours) > 0 && receiptImage && !isSubmitting
                             ? 'bg-gradient-to-r from-cyan-200 to-cyan-300 text-purple-900 hover:from-cyan-300 hover:to-cyan-400 shadow-lg transform hover:scale-105'
                             : 'bg-gray-700 text-gray-400 cursor-not-allowed'
                         }`}
                       >
-                        Continuar con la reserva
+                        {isSubmitting ? 'Procesando...' : 'Continuar con la reserva'}
                       </button>
                     </div>
                   </div>
