@@ -350,8 +350,8 @@ const Ahora = () => {
 
   return (
     <div id="Tarifas" className="border-b text-center border-[#9A9A9A] relative">
-      <div className="mx-auto py-3 md:py-5 lg:py-8 border-l border-r border-[#9A9A9A] md:px-10 max-w-[1650px] px-4">
-        <section className="relative py-6 px-8 flex justify-center items-center">
+      <div className="mx-auto py-24 md:py-16 lg:py-24 border-l border-r border-[#9A9A9A] md:px-10 max-w-[1650px] px-4">
+        <section className="relative py-16 px-8 flex justify-center items-center">
           <h2 className="font-moderniz text-[23px] md:text-[38px] lg:text-[92px] font-[900] tracking-wider">
             EMPEZAR AHORA
           </h2>
@@ -443,7 +443,7 @@ const Ahora = () => {
 
           {/* Calculator Overlay */}
           {showCalculator && (
-            <div className="absolute inset-0 bg-black/15 flex items-center justify-center z-10 p-4">
+            <div className="absolute inset-0 bg-black/15 flex items-center justify-center z-10 md:p-4">
               <div className="bg-black/70 backdrop-blur-sm border-[0.5px] border-white/70 shadow-2xl w-full max-w-6xl max-h-[90vh] overflow-y-auto">
                 
                 {/* Agregar Font Awesome */}
