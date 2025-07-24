@@ -8,6 +8,10 @@ const BookingSchema = new mongoose.Schema({
     required: true,
     min: 1
   },
+  reservationDate: {
+    type: Date,
+    required: true
+  },
   services: {
     platillos: { type: Boolean, default: false },
     pedalDoble: { type: Boolean, default: false }

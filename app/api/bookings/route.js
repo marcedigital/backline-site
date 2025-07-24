@@ -15,6 +15,7 @@ export async function POST(req) {
     const bookingData = await req.json();
     console.log('📋 Datos de reserva recibidos:', {
       hours: bookingData.hours,
+      reservationDate: bookingData.reservationDate,
       services: bookingData.services,
       total: bookingData.total,
       coupon: bookingData.couponCode || 'Sin cupón',
@@ -24,13 +25,13 @@ export async function POST(req) {
     });
     
     // Validar datos requeridos básicos primero
-    const { hours, services, subtotal, total } = bookingData;
+    const { hours, reservationDate, services, subtotal, total } = bookingData;
     
-    if (!hours || !services || !subtotal || !total) {
+    if (!hours || !reservationDate || !services || !subtotal || !total) {
       console.log('❌ Faltan campos básicos requeridos');
       return NextResponse.json({
         success: false,
-        message: 'Faltan datos básicos requeridos para crear la reserva'
+        message: 'Faltan datos básicos requeridos para crear la reserva (horas, fecha de reserva, servicios, subtotal, total)'
       }, { status: 400 });
     }
     
@@ -81,6 +82,7 @@ export async function POST(req) {
     // Preparar datos de la reserva - ACTUALIZADO PARA IMÁGENES
     const newBookingData = {
       hours: parseFloat(hours),
+      reservationDate: new Date(reservationDate),
       services: {
         platillos: Boolean(services.platillos),
         pedalDoble: Boolean(services.pedalDoble)
@@ -201,6 +203,7 @@ export async function POST(req) {
       booking: {
         id: savedBooking._id,
         hours: savedBooking.hours,
+        reservationDate: savedBooking.reservationDate,
         services: savedBooking.services,
         total: savedBooking.total,
         discount: savedBooking.discount,

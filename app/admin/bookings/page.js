@@ -334,7 +334,7 @@ export default function AdminBookings() {
               <table className="w-full">
                 <thead className="bg-gray-800/50">
                   <tr>
-                    <th className="px-6 py-4 text-left text-sm font-medium text-gray-300">Fecha</th>
+                    <th className="px-6 py-4 text-left text-sm font-medium text-gray-300">Fecha de Reserva</th>
                     <th className="px-6 py-4 text-left text-sm font-medium text-gray-300">Comprobante</th>
                     <th className="px-6 py-4 text-left text-sm font-medium text-gray-300">Sesión</th>
                     <th className="px-6 py-4 text-left text-sm font-medium text-gray-300">Cupón</th>
@@ -349,10 +349,20 @@ export default function AdminBookings() {
                       <td className="px-6 py-4">
                         <div className="text-sm">
                           <div className="font-medium text-white">
-                            {formatDate(booking.createdAt)}
+                            {booking.reservationDate ? 
+                              (() => {
+                                const date = new Date(booking.reservationDate);
+                                const year = date.getUTCFullYear();
+                                const month = date.getUTCMonth();
+                                const day = date.getUTCDate();
+                                const monthNames = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+                                return `${day} ${monthNames[month]} ${year}`;
+                              })() : 
+                              formatDate(booking.createdAt)
+                            }
                           </div>
                           <div className="text-gray-400 text-xs">
-                            {booking.ipAddress !== 'unknown' && `IP: ${booking.ipAddress}`}
+                            Creada: {formatDate(booking.createdAt)}
                           </div>
                         </div>
                       </td>
@@ -502,8 +512,23 @@ export default function AdminBookings() {
                     {/* Main Info */}
                     <div className="grid grid-cols-2 gap-3 text-sm mb-3">
                       <div>
-                        <span className="text-gray-400">Fecha:</span>
-                        <div className="font-medium">{formatDate(booking.createdAt)}</div>
+                        <span className="text-gray-400">Fecha Reserva:</span>
+                        <div className="font-medium">
+                          {booking.reservationDate ? 
+                            (() => {
+                              const date = new Date(booking.reservationDate);
+                              const year = date.getUTCFullYear();
+                              const month = date.getUTCMonth();
+                              const day = date.getUTCDate();
+                              const monthNames = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+                              return `${day} ${monthNames[month]} ${year}`;
+                            })() : 
+                            formatDate(booking.createdAt)
+                          }
+                        </div>
+                        <div className="text-xs text-gray-400">
+                          Creada: {formatDate(booking.createdAt)}
+                        </div>
                       </div>
                       <div>
                         <span className="text-gray-400">Sesión:</span>

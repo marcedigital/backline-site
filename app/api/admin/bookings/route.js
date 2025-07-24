@@ -70,7 +70,7 @@ export async function GET(req) {
     
     // Seleccionar campos - ACTUALIZADO para incluir campos de imagen
     let selectFields = [
-      'hours', 'services', 'subtotal', 'discount', 'total', 'status', 
+      'hours', 'reservationDate', 'services', 'subtotal', 'discount', 'total', 'status', 
       'createdAt', 'updatedAt', 'ipAddress', 'userAgent',
       'couponUsed'
     ];

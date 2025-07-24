@@ -14,6 +14,7 @@ const Ahora = () => {
   const [platillos, setPlatillos] = useState(false);
   const [pedalDoble, setPedalDoble] = useState(false);
   const [coupon, setCoupon] = useState('');
+  const [reservationDate, setReservationDate] = useState('');
   
   // Estados de imagen - NUEVO: Reemplaza receiptDetail
   const [receiptImage, setReceiptImage] = useState(null);
@@ -209,7 +210,7 @@ const Ahora = () => {
   }, [hours, platillos, pedalDoble, appliedCoupon]);
 
   const handleProceedToBooking = async () => {
-    if (hours && parseFloat(hours) > 0 && receiptImage && !isSubmitting) {
+    if (hours && parseFloat(hours) > 0 && reservationDate && receiptImage && !isSubmitting) {
       setIsSubmitting(true);
       
       try {
@@ -218,6 +219,7 @@ const Ahora = () => {
         // Preparar datos de la reserva
         const bookingData = {
           hours: parseFloat(hours),
+          reservationDate: reservationDate,
           services: {
             platillos,
             pedalDoble
@@ -510,6 +512,24 @@ const Ahora = () => {
                         required
                       />
                     </div>
+
+                    {/* Fecha de la reserva */}
+                    <div className="mb-6">
+                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                        Fecha de la reserva: <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="date"
+                        value={reservationDate}
+                        onChange={(e) => setReservationDate(e.target.value)}
+                        className="w-full px-3 py-2 bg-gray-800 border border-gray-600 text-white focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                        min={new Date().toISOString().split('T')[0]}
+                        required
+                      />
+                      <p className="text-xs text-gray-400 mt-1">
+                        💡 Así vinculamos tu depósito con tu reserva
+                      </p>
+                    </div>
                     
                     {/* Add-ons */}
                     <div className="mb-6">
@@ -764,9 +784,9 @@ const Ahora = () => {
                     <div className="space-y-3">
                       <button
                         onClick={handleProceedToBooking}
-                        disabled={!hours || parseFloat(hours) <= 0 || !receiptImage || isSubmitting}
+                        disabled={!hours || parseFloat(hours) <= 0 || !reservationDate || !receiptImage || isSubmitting}
                         className={`w-full py-4 px-6 font-bold text-lg transition-all ${
-                          hours && parseFloat(hours) > 0 && receiptImage && !isSubmitting
+                          hours && parseFloat(hours) > 0 && reservationDate && receiptImage && !isSubmitting
                             ? 'bg-gradient-to-r from-cyan-200 to-cyan-300 text-purple-900 hover:from-cyan-300 hover:to-cyan-400 shadow-lg transform hover:scale-105'
                             : 'bg-gray-700 text-gray-400 cursor-not-allowed'
                         }`}
