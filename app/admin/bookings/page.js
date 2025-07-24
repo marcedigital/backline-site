@@ -31,6 +31,8 @@ export default function AdminBookings() {
   const [topCoupons, setTopCoupons] = useState([]);
   const [pagination, setPagination] = useState({});
   const [selectedImage, setSelectedImage] = useState(null); // NUEVO: Para modal de imagen
+  const [imageCache, setImageCache] = useState({}); // Cache para imágenes cargadas
+  const [loadingImages, setLoadingImages] = useState({}); // Estado de carga por imagen
   const router = useRouter();
 
   // Filtros
@@ -70,8 +72,8 @@ export default function AdminBookings() {
         }
       });
       
-      // IMPORTANTE: Siempre incluir imágenes para el admin
-      queryParams.append('includeImages', 'true');
+      // LAZY LOADING: No cargar imágenes por defecto para mejor rendimiento
+      // Las imágenes se cargarán individualmente cuando se necesiten
       
       const response = await fetch(`/api/admin/bookings?${queryParams}`, {
         headers: {
@@ -123,6 +125,13 @@ export default function AdminBookings() {
     }));
   };
 
+  const handlePageChange = (page) => {
+    setFilters(prev => ({
+      ...prev,
+      page: page
+    }));
+  };
+
   const handleLogout = () => {
     localStorage.removeItem('adminToken');
     router.push('/admin');
@@ -155,9 +164,68 @@ export default function AdminBookings() {
     );
   };
 
-  // NUEVA FUNCIÓN: Para descargar imagen
-  const downloadImage = (imageData, booking) => {
-    if (!imageData) return;
+  // NUEVA FUNCIÓN: Cargar imagen bajo demanda
+  const loadImage = async (bookingId) => {
+    // Si ya está en cache, devolverla
+    if (imageCache[bookingId]) {
+      return imageCache[bookingId];
+    }
+    
+    // Si ya se está cargando, esperar
+    if (loadingImages[bookingId]) {
+      return null;
+    }
+    
+    try {
+      setLoadingImages(prev => ({ ...prev, [bookingId]: true }));
+      
+      const token = localStorage.getItem('adminToken');
+      const response = await fetch(`/api/admin/bookings/${bookingId}/image`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        const imageData = data.image.data;
+        
+        // Guardar en cache
+        setImageCache(prev => ({ ...prev, [bookingId]: imageData }));
+        
+        return imageData;
+      } else {
+        console.error('Error cargando imagen:', response.status);
+        return null;
+      }
+    } catch (error) {
+      console.error('Error cargando imagen:', error);
+      return null;
+    } finally {
+      setLoadingImages(prev => ({ ...prev, [bookingId]: false }));
+    }
+  };
+  
+  // NUEVA FUNCIÓN: Ver imagen con lazy loading
+  const viewImage = async (booking) => {
+    const imageData = await loadImage(booking._id);
+    if (imageData) {
+      setSelectedImage({
+        src: imageData,
+        booking: booking
+      });
+    } else {
+      alert('Error al cargar la imagen');
+    }
+  };
+
+  // NUEVA FUNCIÓN: Descargar imagen con lazy loading
+  const downloadImage = async (booking) => {
+    const imageData = await loadImage(booking._id);
+    if (!imageData) {
+      alert('Error al cargar la imagen para descarga');
+      return;
+    }
 
     try {
       const link = document.createElement('a');
@@ -248,7 +316,7 @@ export default function AdminBookings() {
       <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Filtros */}
         <div className="bg-gray-900/50 border border-gray-700 rounded-lg backdrop-blur-sm p-6 mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
             {/* Búsqueda */}
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">Buscar</label>
@@ -294,15 +362,31 @@ export default function AdminBookings() {
               </select>
             </div>
 
-            {/* Fechas */}
+            {/* Fecha desde */}
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Desde</label>
+              <label className="block text-sm font-medium text-gray-300 mb-2">Reserva desde</label>
               <input
                 type="date"
                 value={filters.dateFrom}
                 onChange={(e) => handleFilterChange('dateFrom', e.target.value)}
                 className="w-full px-4 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-600"
               />
+            </div>
+
+            {/* Elementos por página */}
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">Por página</label>
+              <select
+                value={filters.limit}
+                onChange={(e) => handleFilterChange('limit', parseInt(e.target.value))}
+                className="w-full px-4 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-600"
+              >
+                <option value={10}>10</option>
+                <option value={20}>20</option>
+                <option value={30}>30</option>
+                <option value={40}>40</option>
+                <option value={50}>50</option>
+              </select>
             </div>
 
             {/* Acciones */}
@@ -367,36 +451,39 @@ export default function AdminBookings() {
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        {/* ARREGLADO: Mejor detección de imagen */}
-                        {(booking.receiptImage && booking.receiptImage.startsWith('data:')) || booking.hasReceiptImage ? (
+                        {/* LAZY LOADING: Detección basada en metadatos */}
+                        {booking.hasReceiptImage ? (
                           <div className="flex items-center space-x-2">
                             <div className="flex items-center space-x-1">
                               <FileImage className="h-4 w-4 text-green-400" />
                               <span className="text-xs text-green-400">
-                                {booking.receiptImageSizeFormatted || 
-                                 (booking.receiptImageSize ? `${(booking.receiptImageSize / 1024).toFixed(1)} KB` : '') || 
-                                 'Imagen'}
+                                {booking.receiptImageSizeFormatted || 'Imagen'}
                               </span>
                             </div>
                             <div className="flex space-x-1">
                               <button
-                                onClick={() => {
-                                  setSelectedImage({
-                                    src: booking.receiptImage,
-                                    booking: booking
-                                  });
-                                }}
-                                className="text-blue-400 hover:text-blue-300 p-1"
+                                onClick={() => viewImage(booking)}
+                                disabled={loadingImages[booking._id]}
+                                className="text-blue-400 hover:text-blue-300 p-1 disabled:opacity-50"
                                 title="Ver imagen"
                               >
-                                <Eye className="h-3 w-3" />
+                                {loadingImages[booking._id] ? (
+                                  <RefreshCw className="h-3 w-3 animate-spin" />
+                                ) : (
+                                  <Eye className="h-3 w-3" />
+                                )}
                               </button>
                               <button
-                                onClick={() => downloadImage(booking.receiptImage, booking)}
-                                className="text-green-400 hover:text-green-300 p-1"
+                                onClick={() => downloadImage(booking)}
+                                disabled={loadingImages[booking._id]}
+                                className="text-green-400 hover:text-green-300 p-1 disabled:opacity-50"
                                 title="Descargar imagen"
                               >
-                                <Download className="h-3 w-3" />
+                                {loadingImages[booking._id] ? (
+                                  <RefreshCw className="h-3 w-3 animate-spin" />
+                                ) : (
+                                  <Download className="h-3 w-3" />
+                                )}
                               </button>
                             </div>
                           </div>
@@ -495,7 +582,7 @@ export default function AdminBookings() {
                     {/* Header */}
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center space-x-2">
-                        {(booking.receiptImage && booking.receiptImage.startsWith('data:')) || booking.hasReceiptImage ? (
+                        {booking.hasReceiptImage ? (
                           <div className="flex items-center space-x-1">
                             <FileImage className="h-4 w-4 text-green-400" />
                             <span className="text-xs text-green-400">
@@ -562,23 +649,30 @@ export default function AdminBookings() {
                     {/* Actions */}
                     <div className="flex items-center justify-between">
                       <div className="flex space-x-2">
-                        {(booking.receiptImage && booking.receiptImage.startsWith('data:')) && (
+                        {booking.hasReceiptImage && (
                           <>
                             <button
-                              onClick={() => setSelectedImage({
-                                src: booking.receiptImage,
-                                booking: booking
-                              })}
-                              className="text-blue-400 hover:text-blue-300 text-xs flex items-center space-x-1"
+                              onClick={() => viewImage(booking)}
+                              disabled={loadingImages[booking._id]}
+                              className="text-blue-400 hover:text-blue-300 text-xs flex items-center space-x-1 disabled:opacity-50"
                             >
-                              <Eye className="h-3 w-3" />
+                              {loadingImages[booking._id] ? (
+                                <RefreshCw className="h-3 w-3 animate-spin" />
+                              ) : (
+                                <Eye className="h-3 w-3" />
+                              )}
                               <span>Ver</span>
                             </button>
                             <button
-                              onClick={() => downloadImage(booking.receiptImage, booking)}
-                              className="text-green-400 hover:text-green-300 text-xs flex items-center space-x-1"
+                              onClick={() => downloadImage(booking)}
+                              disabled={loadingImages[booking._id]}
+                              className="text-green-400 hover:text-green-300 text-xs flex items-center space-x-1 disabled:opacity-50"
                             >
-                              <Download className="h-3 w-3" />
+                              {loadingImages[booking._id] ? (
+                                <RefreshCw className="h-3 w-3 animate-spin" />
+                              ) : (
+                                <Download className="h-3 w-3" />
+                              )}
                               <span>Descargar</span>
                             </button>
                           </>
@@ -628,25 +722,92 @@ export default function AdminBookings() {
 
           {/* Pagination */}
           {pagination.totalPages > 1 && (
-            <div className="p-6 border-t border-gray-700 flex items-center justify-between">
-              <div className="text-sm text-gray-400">
-                Página {pagination.currentPage} de {pagination.totalPages}
-              </div>
-              <div className="flex space-x-2">
-                <button
-                  onClick={() => handleFilterChange('page', pagination.currentPage - 1)}
-                  disabled={!pagination.hasPrev}
-                  className="bg-gray-700 hover:bg-gray-600 disabled:bg-gray-800 disabled:cursor-not-allowed px-4 py-2 rounded text-sm transition-colors"
-                >
-                  Anterior
-                </button>
-                <button
-                  onClick={() => handleFilterChange('page', pagination.currentPage + 1)}
-                  disabled={!pagination.hasNext}
-                  className="bg-gray-700 hover:bg-gray-600 disabled:bg-gray-800 disabled:cursor-not-allowed px-4 py-2 rounded text-sm transition-colors"
-                >
-                  Siguiente
-                </button>
+            <div className="p-6 border-t border-gray-700">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="text-sm text-gray-400">
+                  Mostrando {((pagination.currentPage - 1) * filters.limit) + 1} - {Math.min(pagination.currentPage * filters.limit, pagination.totalCount)} de {pagination.totalCount} reservas
+                </div>
+                
+                <div className="flex items-center space-x-4">
+                  {/* Páginas numéricas */}
+                  <div className="flex space-x-1">
+                    {/* Botón Anterior */}
+                    <button
+                      onClick={() => handlePageChange(Math.max(1, pagination.currentPage - 1))}
+                      disabled={!pagination.hasPrev}
+                      className="bg-gray-700 hover:bg-gray-600 disabled:bg-gray-800 disabled:cursor-not-allowed px-3 py-2 rounded text-sm transition-colors"
+                    >
+                      ←
+                    </button>
+                    
+                    {/* Páginas */}
+                    {(() => {
+                      const pages = [];
+                      const currentPage = pagination.currentPage;
+                      const totalPages = pagination.totalPages;
+                      
+                      // Mostrar primera página
+                      if (currentPage > 3) {
+                        pages.push(
+                          <button
+                            key={1}
+                            onClick={() => handlePageChange(1)}
+                            className="px-3 py-2 rounded text-sm transition-colors bg-gray-700 hover:bg-gray-600"
+                          >
+                            1
+                          </button>
+                        );
+                        if (currentPage > 4) {
+                          pages.push(<span key="dots1" className="px-2 text-gray-400">...</span>);
+                        }
+                      }
+                      
+                      // Mostrar páginas alrededor de la actual
+                      for (let i = Math.max(1, currentPage - 2); i <= Math.min(totalPages, currentPage + 2); i++) {
+                        pages.push(
+                          <button
+                            key={i}
+                            onClick={() => handlePageChange(i)}
+                            className={`px-3 py-2 rounded text-sm transition-colors ${
+                              i === currentPage
+                                ? 'bg-purple-600 text-white'
+                                : 'bg-gray-700 hover:bg-gray-600 text-gray-300'
+                            }`}
+                          >
+                            {i}
+                          </button>
+                        );
+                      }
+                      
+                      // Mostrar última página
+                      if (currentPage < totalPages - 2) {
+                        if (currentPage < totalPages - 3) {
+                          pages.push(<span key="dots2" className="px-2 text-gray-400">...</span>);
+                        }
+                        pages.push(
+                          <button
+                            key={totalPages}
+                            onClick={() => handlePageChange(totalPages)}
+                            className="px-3 py-2 rounded text-sm transition-colors bg-gray-700 hover:bg-gray-600"
+                          >
+                            {totalPages}
+                          </button>
+                        );
+                      }
+                      
+                      return pages;
+                    })()}
+                    
+                    {/* Botón Siguiente */}
+                    <button
+                      onClick={() => handlePageChange(Math.min(pagination.totalPages, pagination.currentPage + 1))}
+                      disabled={!pagination.hasNext}
+                      className="bg-gray-700 hover:bg-gray-600 disabled:bg-gray-800 disabled:cursor-not-allowed px-3 py-2 rounded text-sm transition-colors"
+                    >
+                      →
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           )}
@@ -680,7 +841,7 @@ export default function AdminBookings() {
             </div>
             <div className="p-4 border-t border-gray-700 flex gap-2">
               <button
-                onClick={() => downloadImage(selectedImage.src, selectedImage.booking)}
+                onClick={() => downloadImage(selectedImage.booking)}
                 className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
               >
                 <Download className="h-4 w-4" />

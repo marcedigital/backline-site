@@ -1,6 +1,7 @@
 // app/api/admin/bookings/route.js
 import { NextResponse } from 'next/server';
 import Booking from '../../../../models/booking';
+import Coupon from '../../../../models/coupons';
 import { connectToDatabase } from '../../../../utils/database';
 import { verifyAdminToken } from '../../../../utils/auth';
 
@@ -26,10 +27,9 @@ export async function GET(req) {
     const limit = parseInt(searchParams.get('limit')) || 20;
     const status = searchParams.get('status');
     const dateFrom = searchParams.get('dateFrom');
-    const dateTo = searchParams.get('dateTo');
     const search = searchParams.get('search');
     const hasCoupon = searchParams.get('hasCoupon');
-    const includeImages = searchParams.get('includeImages') !== 'false'; // Por defecto incluir imágenes
+    const includeImages = searchParams.get('includeImages') === 'true'; // Solo incluir imágenes si se solicita explícitamente
     
     console.log('📋 Parámetros recibidos:', {
       page, limit, status, includeImages,
@@ -43,10 +43,8 @@ export async function GET(req) {
       filters.status = status;
     }
     
-    if (dateFrom || dateTo) {
-      filters.createdAt = {};
-      if (dateFrom) filters.createdAt.$gte = new Date(dateFrom);
-      if (dateTo) filters.createdAt.$lte = new Date(dateTo);
+    if (dateFrom) {
+      filters.reservationDate = { $gte: new Date(dateFrom) };
     }
     
     if (search) {
@@ -68,17 +66,19 @@ export async function GET(req) {
     // Calcular skip para paginación
     const skip = (page - 1) * limit;
     
-    // Seleccionar campos - ACTUALIZADO para incluir campos de imagen
+    // Seleccionar campos - ACTUALIZADO para lazy loading de imágenes
     let selectFields = [
       'hours', 'reservationDate', 'services', 'subtotal', 'discount', 'total', 'status', 
       'createdAt', 'updatedAt', 'ipAddress', 'userAgent',
-      'couponUsed'
+      'couponUsed', 'receiptImageType', 'receiptImageSize' // Siempre incluir metadatos de imagen
     ];
     
-    // SIEMPRE incluir campos de imagen para el admin
+    // Solo incluir la imagen completa si se solicita explícitamente
     if (includeImages) {
-      selectFields.push('receiptImage', 'receiptImageType', 'receiptImageSize');
-      console.log('🖼️ Incluyendo campos de imagen en la consulta');
+      selectFields.push('receiptImage');
+      console.log('🖼️ Incluyendo imagen completa en la consulta');
+    } else {
+      console.log('⚡ Modo rápido: solo metadatos de imagen');
     }
     
     const selectString = selectFields.join(' ');
@@ -114,13 +114,14 @@ export async function GET(req) {
     const processedBookings = bookings.map(booking => {
       const processed = {
         ...booking,
-        hasReceiptImage: !!booking.receiptImage,
+        // Determinar si tiene imagen basado en metadatos (más confiable)
+        hasReceiptImage: !!(booking.receiptImageType && booking.receiptImageSize),
         receiptImageSizeFormatted: booking.receiptImageSize 
           ? `${(booking.receiptImageSize / 1024).toFixed(1)} KB`
           : null
       };
       
-      // Asegurar que la imagen esté presente si existe
+      // Solo incluir la imagen si se solicitó y existe
       if (booking.receiptImage && includeImages) {
         processed.receiptImage = booking.receiptImage;
       }

@@ -1,7 +1,16 @@
 // components/WhatsAppButton.jsx
+'use client';
 import React from 'react';
+import { usePathname } from 'next/navigation';
 
 const WhatsAppButton = () => {
+  const pathname = usePathname();
+  
+  // No mostrar el botón en rutas administrativas
+  if (pathname.startsWith('/admin')) {
+    return null;
+  }
+  
   // Número de teléfono de WhatsApp (cambiar por el tuyo)
   const phoneNumber = '50683408304';
   
