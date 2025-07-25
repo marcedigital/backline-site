@@ -18,9 +18,9 @@ const Regulations = () => {
         </div>
       </div>
       <div className=" border-t border-b border-[#9A9A9A]">
-        <section className=" md:px-10 border-l border-r border-[#9A9A9A] md:h-[500px] max-w-[1650px] mx-auto  bg-black ">
-          <div className="flex flex-col h-full">
-            <div className="flex flex-col md:flex-row h-full ">
+        <section className=" md:px-10 border-l border-r border-[#9A9A9A] min-h-[500px] max-w-[1650px] mx-auto  bg-black ">
+          <div className="flex flex-col min-h-full">
+            <div className="flex flex-col md:flex-row flex-1 ">
               {/* Left side - Image */}
               <div className="md:w-1/2 relative border-r border-gray-800">
                 <div className="relative h-[400px] md:h-full">
@@ -45,7 +45,7 @@ const Regulations = () => {
               {/* Right side - Rules */}
               <div className="md:w-1/2 p-3 lg:p-6 flex flex-col justify-center">
                 <div className="space-y-3 text-[16px] md:text-[14px] lg:text-[18px]">
-                  <div className="border border-[#9A9A9A] p-2 lg:p-4">
+                  <div className="border border-[#9A9A9A] p-4">
                     <div className="flex items-center gap-3">
                       <span className="text-yellow-500 font-bold">[01]</span>
                       <p className="">
@@ -85,6 +85,36 @@ const Regulations = () => {
                       <p className="">
                         Si tenés problemas, contactá al guardia en turno o a
                         Andrés Bustamante.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="border border-[#9A9A9A] p-4">
+                    <div className="flex items-center gap-3">
+                      <span className="text-yellow-500 font-bold">[06]</span>
+                      <p className="">
+                        Si cancelás tu ensayo con menos de 24 horas de 
+                        anticipación, tenés que pagar la tarifa completa.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="border border-[#9A9A9A] p-4">
+                    <div className="flex items-center gap-3">
+                      <span className="text-yellow-500 font-bold">[07]</span>
+                      <p className="">
+                        Si no llegás a tu ensayo después de confirmar 
+                        tu reserva, tenés que pagar la tarifa completa.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="border border-[#9A9A9A] p-4">
+                    <div className="flex items-center gap-3">
+                      <span className="text-yellow-500 font-bold">[08]</span>
+                      <p className="">
+                        Para casos especiales de cancelación, contactanos 
+                        únicamente por WhatsApp.
                       </p>
                     </div>
                   </div>
