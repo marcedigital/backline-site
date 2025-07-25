@@ -301,6 +301,27 @@ const Ahora = () => {
     setShowContinueButton(false);
   };
 
+  const handleReloadWidget = () => {
+    // Encontrar el iframe de EasyWeek y recargarlo
+    const iframe = document.querySelector('iframe[src*="booking.easyweek.io"]');
+    if (iframe) {
+      // Recargar el iframe cambiando su src temporalmente
+      const originalSrc = iframe.src;
+      iframe.src = 'about:blank';
+      setTimeout(() => {
+        iframe.src = originalSrc;
+      }, 100);
+    }
+    
+    // Resetear el estado del botón de continuar
+    setShowContinueButton(false);
+    
+    // Volver a mostrar el botón después del timeout habitual
+    setTimeout(() => {
+      setShowContinueButton(true);
+    }, 10000);
+  };
+
   const handleSuccessModalContinue = () => {
     setShowSuccessModal(false);
     setShowCalculator(false);
@@ -350,6 +371,9 @@ const Ahora = () => {
 
   return (
     <div id="Tarifas" className="border-b text-center border-[#9A9A9A] relative">
+      {/* Importar Font Awesome a nivel global del componente */}
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+      
       <div className="mx-auto py-24 md:py-16 lg:py-24 border-l border-r border-[#9A9A9A] md:px-10 max-w-[1650px] px-4">
         <section className="relative py-16 px-8 flex justify-center items-center">
           <h2 className="font-moderniz text-[23px] md:text-[38px] lg:text-[92px] font-[900] tracking-wider">
@@ -405,20 +429,37 @@ const Ahora = () => {
               />
             </div>
             
-            {/* Botón integrado - ANCHO COMPLETO DEL WIDGET CON MAX-WIDTH */}
+            {/* Botones integrados - ANCHO COMPLETO DEL WIDGET CON MAX-WIDTH */}
             {showPersistentBanner && showContinueButton && (
               <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 z-20 w-full" style={{ maxWidth: '750px' }}>
-                <button
-                  onClick={handleBackToCalculator}
-                  className="w-full bg-gradient-to-r from-purple-600 to-purple-700 text-white py-10 px-6 font-bold text-lg shadow-xl hover:from-purple-700 hover:to-purple-800 transition-all duration-300 flex items-center justify-center gap-3 animate-fade-in-up"
-                  style={{ 
-                    borderRadius: '0px',
-                    animation: 'fadeInUp 0.5s ease-out'
-                  }}
-                >
-                  <i className="fas fa-credit-card text-lg"></i>
-                  <span>Continuar con el pago</span>
-                </button>
+                <div className="flex gap-0">
+                  {/* Botón de reload */}
+                  <button
+                    onClick={handleReloadWidget}
+                    className="bg-gradient-to-r from-green-600 to-green-700 text-white py-10 px-6 font-bold text-lg shadow-xl hover:from-green-700 hover:to-green-800 transition-all duration-300 flex items-center justify-center animate-fade-in-up"
+                    style={{ 
+                      borderRadius: '0px',
+                      animation: 'fadeInUp 0.5s ease-out',
+                      width: '120px' // Botón más ancho
+                    }}
+                    title="Recargar widget"
+                  >
+                    <span className="text-white text-lg">←</span>
+                  </button>
+                  
+                  {/* Botón principal de continuar con el pago */}
+                  <button
+                    onClick={handleBackToCalculator}
+                    className="flex-1 bg-gradient-to-r from-purple-600 to-purple-700 text-white py-10 px-6 font-bold text-lg shadow-xl hover:from-purple-700 hover:to-purple-800 transition-all duration-300 flex items-center justify-center gap-3 animate-fade-in-up"
+                    style={{ 
+                      borderRadius: '0px',
+                      animation: 'fadeInUp 0.5s ease-out'
+                    }}
+                  >
+                    <i className="fas fa-credit-card text-lg"></i>
+                    <span>Continuar con el pago</span>
+                  </button>
+                </div>
                 
                 {/* Keyframes CSS para la animación */}
                 <style jsx>{`
