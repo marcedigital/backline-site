@@ -52,12 +52,12 @@ const Ahora = () => {
     const numHours = parseFloat(hours);
     let basePrice = 10000; // Primera hora
     if (numHours > 1) {
-      basePrice += (numHours - 1) * 8000; // Horas adicionales
+      basePrice += (numHours - 1) * 5000; // Horas adicionales
     }
     
     let serviceCost = 0;
-    if (platillos) serviceCost += 2000;
-    if (pedalDoble) serviceCost += 2000;
+    if (platillos) serviceCost += 2000 * numHours;
+    if (pedalDoble) serviceCost += 2000 * numHours;
     
     return basePrice + serviceCost;
   };
@@ -87,13 +87,13 @@ const Ahora = () => {
         // Las horas gratis cubren toda la sesión
         hoursDiscount = 10000; // Primera hora gratis
         if (numHours > 1) {
-          hoursDiscount += Math.min(freeHours - 1, numHours - 1) * 8000;
+          hoursDiscount += Math.min(freeHours - 1, numHours - 1) * 5000;
         }
       } else {
         // Las horas gratis cubren parcialmente
         hoursDiscount = 10000; // Primera hora gratis
         if (freeHours > 1) {
-          hoursDiscount += (freeHours - 1) * 8000; // Horas adicionales gratis
+          hoursDiscount += (freeHours - 1) * 5000; // Horas adicionales gratis
         }
       }
       
@@ -691,10 +691,10 @@ const Ahora = () => {
                             {parseFloat(hours) > 1 && (
                               <div className="flex justify-between">
                                 <span className="text-gray-300">
-                                  {parseFloat(hours) - 1} hora{parseFloat(hours) - 1 !== 1 ? 's' : ''} adicional{parseFloat(hours) - 1 !== 1 ? 'es' : ''} (₡8,000 c/u)
+                                  {parseFloat(hours) - 1} hora{parseFloat(hours) - 1 !== 1 ? 's' : ''} adicional{parseFloat(hours) - 1 !== 1 ? 'es' : ''} (₡5,000 c/u)
                                 </span>
                                 <span className="text-white">
-                                  ₡{((parseFloat(hours) - 1) * 8000).toLocaleString('es-CR')}
+                                  ₡{((parseFloat(hours) - 1) * 5000).toLocaleString('es-CR')}
                                 </span>
                               </div>
                             )}
@@ -702,15 +702,15 @@ const Ahora = () => {
                             {/* Servicios adicionales */}
                             {platillos && (
                               <div className="flex justify-between">
-                                <span className="text-gray-300">Platillos</span>
-                                <span className="text-white">₡2,000</span>
+                                <span className="text-gray-300">Platillos ({parseFloat(hours)} hora{parseFloat(hours) !== 1 ? 's' : ''})</span>
+                                <span className="text-white">₡{(2000 * parseFloat(hours)).toLocaleString('es-CR')}</span>
                               </div>
                             )}
                             
                             {pedalDoble && (
                               <div className="flex justify-between">
-                                <span className="text-gray-300">Pedal doble</span>
-                                <span className="text-white">₡2,000</span>
+                                <span className="text-gray-300">Pedal doble ({parseFloat(hours)} hora{parseFloat(hours) !== 1 ? 's' : ''})</span>
+                                <span className="text-white">₡{(2000 * parseFloat(hours)).toLocaleString('es-CR')}</span>
                               </div>
                             )}
                           </>
