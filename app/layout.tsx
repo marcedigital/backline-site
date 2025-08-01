@@ -31,6 +31,16 @@ export const metadata: Metadata = {
   description:
     "Estudio de ensayo musical profesional disponible 24/7 con el mejor equipamiento para músicos exigentes.",
   generator: "Aurigital",
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/favicon.svg", type: "image/svg+xml" },
+      { url: "/favicon-96x96.png", type: "image/png", sizes: "96x96" },
+    ],
+    apple: [
+      { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+    ],
+  },
 };
 
 export default function RootLayout({
