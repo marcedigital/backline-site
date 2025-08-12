@@ -27,7 +27,7 @@ export async function POST(req) {
     // Validar datos requeridos básicos primero
     const { hours, reservationDate, services, subtotal, total } = bookingData;
     
-    if (!hours || !reservationDate || !services || !subtotal || !total) {
+    if (!hours || !reservationDate || !services || subtotal === null || subtotal === undefined || total === null || total === undefined) {
       console.log('❌ Faltan campos básicos requeridos');
       return NextResponse.json({
         success: false,
